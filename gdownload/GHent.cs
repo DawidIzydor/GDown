@@ -32,6 +32,7 @@ namespace gdownload
             if (parsed) return;
 
             int page = 0;
+            int pages = 0;
             
             HtmlNode main;
 
@@ -42,6 +43,18 @@ namespace gdownload
                 if(page == 0)
                 {
                     Name = main.SelectSingleNode("//body[1]//div[1]//div[2]//h1[1]").InnerHtml;
+                    Name = Name.Replace(':', '_');
+                    Name = Name.Replace('/', '_');
+                    Name = Name.Replace('\\', '_');
+                    Name = Name.Replace('*', '_');
+                    Name = Name.Replace('?', '_');
+                    Name = Name.Replace('"', '_');
+                    Name = Name.Replace('<', '_');
+                    Name = Name.Replace('>', '_');
+                    Name = Name.Replace('|', '_');
+
+
+                    pages = main.ParentNode.ChildNodes[12].ChildNodes[1].ChildNodes[0].ChildNodes.Count - 2;
                 }
 
                 if (main == null) return;
@@ -56,7 +69,7 @@ namespace gdownload
                 }
 
                 page++;
-            } while (main.SelectSingleNode("//body[1]//div[3]//table[1]//tbody[1]//tr[1]//td["+page+1+"]")?.Attributes["class"].Value != "ptdd");
+            } while (page < pages);
         }
 
         private void ParseImg(string url)

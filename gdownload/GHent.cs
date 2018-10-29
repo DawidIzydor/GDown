@@ -14,17 +14,16 @@ namespace gdownload
         HtmlWeb web = new HtmlWeb();
 
         readonly string SavePath;
-        readonly string Name;
+        string Name;
         readonly string url;
 
         int imgnr = 0;
 
         bool parsed = false;
         
-        public GHent(string SavePath, string Name, string url)
+        public GHent(string SavePath, string url)
         {
             this.SavePath = SavePath;
-            this.Name = Name;
             this.url = url;
         }
         
@@ -39,6 +38,11 @@ namespace gdownload
             do
             {
                 main = web.Load(url+"?p="+page)?.GetElementbyId("gdt");
+
+                if(page == 0)
+                {
+                    Name = main.SelectSingleNode("//body[1]//div[1]//div[2]//h1[1]").InnerHtml;
+                }
 
                 if (main == null) return;
 

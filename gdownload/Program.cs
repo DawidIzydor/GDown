@@ -8,12 +8,21 @@ namespace gdownload
 {
     class Program
     {
-
         static void Main(string[] args)
         {
-            GHent gHent = new GHent("D:\\test", "[Pixiv] Samurai (4342160)", "https://e-hentai.org/g/1289546/7e075e8870/");
+            string SavePath = "";
+            List<string> htmlList = new List<string>()
+            {
+                
+            };
 
-            gHent.Parse();
+            foreach (var html in htmlList)
+            {
+
+                GHent gHent = new GHent(SavePath, html);
+
+                gHent.Parse();
+            }
         }
     }
 }

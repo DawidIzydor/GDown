@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -14,20 +15,21 @@ namespace gdownload
         HtmlWeb web = new HtmlWeb();
 
         readonly string SavePath;
-        string Name;
+        public string Name { get; private set; }
         readonly string url;
 
         int imgnr = 0;
 
         bool parsed = false;
-        
+        public bool Changed { get; private set; } = false;
+
         public GHent(string SavePath, string url)
         {
             this.SavePath = SavePath;
             this.url = url;
         }
-        
-        public void Parse()
+
+        public void Parse(bool downloadImages = true)
         {
             if (parsed) return;
 
@@ -38,6 +40,8 @@ namespace gdownload
 
             do
             {
+                Changed = false;
+
                 main = web.Load(url+"?p="+page)?.GetElementbyId("gdt");
 
                 if(page == 0)
@@ -58,6 +62,8 @@ namespace gdownload
                 }
 
                 if (main == null) return;
+
+                if (!downloadImages) break;
 
                 foreach (var el in main.ChildNodes)
                 {
@@ -99,12 +105,22 @@ namespace gdownload
             {
                 Directory.CreateDirectory(SavePath + "\\" + Name);
             }
+            else
+            {
+                if (File.Exists(SavePath + "\\" + Name + "\\" + imgnr + ".jpg"))
+                {
+                    imgnr++;
+                    return;
+                }
+            }
+
+            Changed = true;
 
             var test2 = SavePath + "\\" + Name + "\\" + imgnr++ + ".jpg";
             
             using (var wc = new WebClient())
             {
-                wc.DownloadFileAsync(test, test2);
+                wc.DownloadFile(test, test2);
             }
         }
     }

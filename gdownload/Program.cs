@@ -11,8 +11,9 @@ namespace gdownload
     {
         static void Main(string[] args)
         {
-            string SavePath = @"D:\dwh\comics\ghent";
-            string CBRLocation = @"D:\dwh\comics\cbr";
+            string SavePath = @"";
+            string CBRLocation = @"";
+
             List<string> htmlList = new List<string>()
             {
             };
@@ -30,14 +31,14 @@ namespace gdownload
 
                 gHent.Parse();
 
-                if(gHent.isExceeded)
-                {
-                    return;
-                }
-
                 if (gHent.Changed)
                 {
                     cBRManager.CreateCbr(SavePath + "\\" + gHent.Name, CBRLocation + "\\" + gHent.Name + ".cbr");
+                }
+
+                if(gHent.isExceeded)
+                {
+                    break;
                 }
             }
         }

@@ -83,6 +83,8 @@ namespace gdownload
                     var link = el.SelectSingleNode(el.XPath + "//div//a");
 
                     ParseImg(link.Attributes["href"].Value);
+
+                    if (isExceeded) break;
                 }
 
                 page++;
@@ -136,6 +138,7 @@ namespace gdownload
                 {
                     if(fileManager.isExceeded(test2))
                     {
+                        File.Delete(test2);
                         isExceeded = true;
                         return;
                     }

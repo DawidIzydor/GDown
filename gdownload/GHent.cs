@@ -21,12 +21,23 @@ namespace gdownload
         int imgnr = 0;
 
         bool parsed = false;
+        public bool isExceeded { get; private set; } = false;
         public bool Changed { get; private set; } = false;
 
-        public GHent(string SavePath, string url)
+        public bool CheckExceed { get; }
+
+        FileManager fileManager;
+
+        public GHent(string SavePath, string url, bool CheckExceed = true)
         {
             this.SavePath = SavePath;
             this.url = url;
+            this.CheckExceed = CheckExceed;
+
+            if(CheckExceed)
+            {
+                fileManager = new FileManager();
+            }
         }
 
         public void Parse(bool downloadImages = true)
@@ -75,32 +86,11 @@ namespace gdownload
                 }
 
                 page++;
-            } while (page < pages);
+            } while (page < pages && !isExceeded);
         }
 
         private void ParseImg(string url)
         {
-            var imgLoad1 = web.Load(url);
-            
-            var nl = imgLoad1.GetElementbyId("loadfail");
-
-            var nlurl = nl.Attributes["onclick"].Value;
-            nlurl = nlurl.Remove(0, nlurl.IndexOf('\'')+1);
-            nlurl = nlurl.Remove(nlurl.IndexOf('\''));
-
-            var imgLoad = web.Load(url + "?nl=" + nlurl);
-
-
-            var a = imgLoad.GetElementbyId("i3");
-            
-            if (a == null) return;
-
-            var img = a.SelectSingleNode(a.XPath + "//a//img");
-
-            var imgLink = img.Attributes["src"].Value;
-
-            var test = new Uri(imgLink);
-
             if(Directory.Exists(SavePath + "\\" + Name) == false)
             {
                 Directory.CreateDirectory(SavePath + "\\" + Name);
@@ -114,6 +104,26 @@ namespace gdownload
                 }
             }
 
+            var imgLoad1 = web.Load(url);
+
+            var nl = imgLoad1.GetElementbyId("loadfail");
+
+            var nlurl = nl.Attributes["onclick"].Value;
+            nlurl = nlurl.Remove(0, nlurl.IndexOf('\'') + 1);
+            nlurl = nlurl.Remove(nlurl.IndexOf('\''));
+
+            var imgLoad = web.Load(url + "?nl=" + nlurl);
+
+            var a = imgLoad.GetElementbyId("i3");
+
+            if (a == null) return;
+
+            var img = a.SelectSingleNode(a.XPath + "//a//img");
+
+            var imgLink = img.Attributes["src"].Value;
+
+            var test = new Uri(imgLink);
+
             Changed = true;
 
             var test2 = SavePath + "\\" + Name + "\\" + imgnr++ + ".jpg";
@@ -121,6 +131,15 @@ namespace gdownload
             using (var wc = new WebClient())
             {
                 wc.DownloadFile(test, test2);
+
+                if(CheckExceed)
+                {
+                    if(fileManager.isExceeded(test2))
+                    {
+                        isExceeded = true;
+                        return;
+                    }
+                }
             }
         }
     }

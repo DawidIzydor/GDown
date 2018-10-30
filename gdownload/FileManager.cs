@@ -11,12 +11,13 @@ namespace gdownload
     class FileManager
     {
         //TODO
-        private string ExceedJpgFile = @"D:\dwh\comics\ghent\exceeded.jpg";
+        private string ExceedJpgFile = @"";
 
-        private string ExceedHash;
+        private string ExceedHash = "9B1F52FF4C49ED065946191D0937FACDC9E75C24E3102558CF78A9B19C96379D";
 
         public FileManager()
         {
+            if(ExceedJpgFile != "")
             ExceedHash = GetChecksum(ExceedJpgFile);
         }
 
@@ -32,6 +33,8 @@ namespace gdownload
 
         public bool isExceeded(string compareTo)
         {
+            if (ExceedHash == "") return false;
+
             string compareHash = GetChecksum(compareTo);
 
             if(compareHash == ExceedHash)

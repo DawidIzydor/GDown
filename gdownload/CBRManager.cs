@@ -15,6 +15,8 @@ namespace gdownload
 
         public bool CreateCbr(string frompath, string savepath)
         {
+            if (frompath == "" || savepath == "") return false;
+
             if (cbrlocked) return false;
 
             cbrlocked = true;

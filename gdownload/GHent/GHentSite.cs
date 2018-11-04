@@ -8,9 +8,9 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace gdownload
+namespace gdownload.GHent
 {
-    class GHent
+    class GHentSite
     {
         HtmlWeb web = new HtmlWeb();
 
@@ -19,16 +19,17 @@ namespace gdownload
         readonly string url;
 
         int imgnr = 0;
+        int downloaded = 0;
 
         bool parsed = false;
-        public bool isExceeded { get; private set; } = false;
+        public bool IsExceeded { get; private set; } = false;
         public bool Changed { get; private set; } = false;
 
         public bool CheckExceed { get; }
 
         FileManager fileManager;
 
-        public GHent(string SavePath, string url, bool CheckExceed = true)
+        public GHentSite(string SavePath, string url, bool CheckExceed = true)
         {
             this.SavePath = SavePath;
             this.url = url;
@@ -55,6 +56,8 @@ namespace gdownload
 
                 main = web.Load(url+"?p="+page)?.GetElementbyId("gdt");
 
+                if (main == null) return;
+
                 if(page == 0)
                 {
                     Name = main.SelectSingleNode("//body[1]//div[1]//div[2]//h1[1]").InnerHtml;
@@ -70,6 +73,10 @@ namespace gdownload
 
 
                     pages = main.ParentNode.ChildNodes[12].ChildNodes[1].ChildNodes[0].ChildNodes.Count - 2;
+
+                    Console.WriteLine("Downloading " + Name +", "+pages+" pages");
+                }else{
+                    Console.WriteLine("Page "+page+" of "+pages);
                 }
 
                 if (main == null) return;
@@ -84,11 +91,13 @@ namespace gdownload
 
                     ParseImg(link.Attributes["href"].Value);
 
-                    if (isExceeded) break;
+                    if (IsExceeded) break;
                 }
 
                 page++;
-            } while (page < pages && !isExceeded);
+            } while (page < pages && !IsExceeded);
+
+            Console.WriteLine("Downloaded "+downloaded+" images, "+ (imgnr-downloaded) +" ignored." + (IsExceeded ? " EXCEEDED!" : ""));
         }
 
         private void ParseImg(string url)
@@ -139,10 +148,12 @@ namespace gdownload
                     if(fileManager.isExceeded(test2))
                     {
                         File.Delete(test2);
-                        isExceeded = true;
+                        IsExceeded = true;
                         return;
-                    }
-                }
+                    }       
+                } 
+                
+                downloaded++;
             }
         }
     }

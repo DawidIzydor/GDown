@@ -19,8 +19,8 @@ namespace gdownload.GHent
         string cbrLocation;
 
         public bool IsExceeded { get; private set; } = false;
-        
-        public bool IgnoreOngoing {get; set;} = false;
+
+        public bool IgnoreOngoing { get; set; } = false;
 
         public GHentTag(string SavePath, string Url, string cbrLocation = "", bool CheckExceed = true)
         {
@@ -33,14 +33,14 @@ namespace gdownload.GHent
         public void Parse()
         {
             Console.WriteLine("Searching by tag");
-            Console.WriteLine("[IgnoreOngoing]: "+IgnoreOngoing);
-            Console.WriteLine("[checkExceeded]: "+checkExceeded);
+            Console.WriteLine("[IgnoreOngoing]: " + IgnoreOngoing);
+            Console.WriteLine("[checkExceeded]: " + checkExceeded);
             var page = web.Load(url).DocumentNode;
             var trs = page.SelectNodes("//table[contains(@class,'itg')]//tr");
 
-            foreach(var tr in trs)
+            foreach (var tr in trs)
             {
-                if(tr.ChildNodes[0].Name == "th")
+                if (tr.ChildNodes[0].Name == "th")
                 {
                     continue;
                 }
@@ -50,22 +50,27 @@ namespace gdownload.GHent
                 try
                 {
                     link = tr.ChildNodes[2].ChildNodes[0].ChildNodes[2].ChildNodes[0].Attributes["href"].Value;
-                }catch(Exception) { continue; }
+                }
+                catch (Exception) { continue; }
 
                 GHentSite gHentSite = new GHentSite(savePath, link, checkExceeded);
                 gHentSite.IgnoreOngoing = this.IgnoreOngoing;
+
                 gHentSite.Parse();
 
-                if (cbrLocation != "" && gHentSite.Name != null && (gHentSite.Changed || File.Exists(cbrLocation + "\\" + gHentSite.Name + ".cbr") == false))
+                if (this.IgnoreOngoing && gHentSite.OngoingFound == false)
                 {
-                    Console.WriteLine("Generating new CBR");
-                    if (cBRManager.CreateCbr(savePath + "\\" + gHentSite.Name, cbrLocation + "\\" + gHentSite.Name + ".cbr"))
+                    if (cbrLocation != "" && gHentSite.Name != null && (gHentSite.Changed || File.Exists(cbrLocation + "\\" + gHentSite.Name + ".cbr") == false))
                     {
-                        Console.WriteLine("OK");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Error");
+                        Console.WriteLine("Generating new CBR");
+                        if (cBRManager.CreateCbr(savePath + "\\" + gHentSite.Name, cbrLocation + "\\" + gHentSite.Name + ".cbr"))
+                        {
+                            Console.WriteLine("OK");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Error");
+                        }
                     }
                 }
 
@@ -76,7 +81,7 @@ namespace gdownload.GHent
                 }
             }
 
-            if(IsExceeded)
+            if (IsExceeded)
             {
                 Console.WriteLine("Exceeded");
             }

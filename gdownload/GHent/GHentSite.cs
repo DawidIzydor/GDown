@@ -7,6 +7,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace gdownload.GHent
@@ -26,8 +27,12 @@ namespace gdownload.GHent
         public bool IsExceeded { get; private set; } = false;
         public bool Changed { get; private set; } = false;
 
-        public bool CheckExceed { get; set;} = false;
-        public bool IgnoreOngoing {get; set;} = false;
+        public bool CheckExceed { get; set; } = false;
+        public bool IgnoreOngoing { get; set; } = false;
+
+        public bool OngoingFound { get; private set; } = false;
+
+        public bool Stop { get; set; } = false;
 
         FileManager fileManager;
 
@@ -37,7 +42,7 @@ namespace gdownload.GHent
             this.url = url;
             this.CheckExceed = CheckExceed;
 
-            if(CheckExceed)
+            if (CheckExceed)
             {
                 fileManager = new FileManager();
             }
@@ -49,18 +54,18 @@ namespace gdownload.GHent
 
             int page = 0;
             int pages = 0;
-            
+
             HtmlNode main;
 
             do
             {
                 Changed = false;
 
-                main = web.Load(url+"?p="+page)?.GetElementbyId("gdt");
+                main = web.Load(url + "?p=" + page)?.GetElementbyId("gdt");
 
                 if (main == null) return;
 
-                if(page == 0)
+                if (page == 0)
                 {
                     Name = main.SelectSingleNode("//body[1]//div[1]//div[2]//h1[1]").InnerHtml;
                     Name = Name.Replace(':', '_');
@@ -73,21 +78,24 @@ namespace gdownload.GHent
                     Name = Name.Replace('>', '_');
                     Name = Name.Replace('|', '_');
 
-                    if(IgnoreOngoing)
-                        {
-                    if(Name.ToUpper().Contains("ONGOING"))
+                    if (IgnoreOngoing)
                     {
-                        Console.WriteLine("Ongoing detected, ignoring");
-                        return;
-                    }
+                        if (Name.ToUpper().Contains("ONGOING"))
+                        {
+                            Console.WriteLine("Ongoing detected, ignoring");
+                            this.OngoingFound = true;
+                            return;
+                        }
                     }
 
 
                     pages = main.ParentNode.ChildNodes[12].ChildNodes[1].ChildNodes[0].ChildNodes.Count - 2;
 
-                    Console.WriteLine("Downloading " + Name +", "+pages+" pages");
-                }else{
-                    Console.WriteLine("Page "+page+" of "+pages);
+                    Console.WriteLine("Downloading " + Name + ", " + pages + " pages");
+                }
+                else
+                {
+                    Console.WriteLine("Page " + (page+1) + " of " + pages);
                 }
 
                 if (main == null) return;
@@ -108,7 +116,7 @@ namespace gdownload.GHent
                 page++;
             } while (page < pages && !IsExceeded);
 
-            Console.WriteLine("Downloaded "+downloaded+" images, "+ (imgnr-downloaded) +" ignored." + (IsExceeded ? " EXCEEDED!" : ""));
+            Console.WriteLine("Downloaded " + downloaded + " images, " + (imgnr - downloaded) + " ignored." + (IsExceeded ? " EXCEEDED!" : ""));
         }
 
         private void ParseImg(string url)
@@ -150,7 +158,7 @@ namespace gdownload.GHent
             Changed = true;
 
             var test2 = SavePath + "\\" + Name + "\\" + imgnr++ + ".jpg";
-            
+
             using (var wc = new WebClient())
             {
                 try
@@ -168,9 +176,10 @@ namespace gdownload.GHent
                     }
 
                     downloaded++;
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Error downloading "+Name+" ("+imgnr+"): "+ex.Message);
+                    Console.WriteLine("Error downloading " + Name + " (" + imgnr + "): " + ex.Message);
                 }
             }
         }

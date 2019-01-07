@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using gdownload.sql;
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +26,8 @@ namespace gdownload.GHent
         public bool IsExceeded { get; private set; } = false;
         public bool Changed { get; private set; } = false;
 
-        public bool CheckExceed { get; }
+        public bool CheckExceed { get; set;} = false;
+        public bool IgnoreOngoing {get; set;} = false;
 
         FileManager fileManager;
 
@@ -41,7 +43,7 @@ namespace gdownload.GHent
             }
         }
 
-        public void Parse(bool downloadImages = true)
+        public void Parse(bool downloadImages = true, bool ignoreDatabase = false)
         {
             if (parsed) return;
 
@@ -70,6 +72,15 @@ namespace gdownload.GHent
                     Name = Name.Replace('<', '_');
                     Name = Name.Replace('>', '_');
                     Name = Name.Replace('|', '_');
+
+                    if(IgnoreOngoing)
+                        {
+                    if(Name.ToUpper().Contains("ONGOING"))
+                    {
+                        Console.WriteLine("Ongoing detected, ignoring");
+                        return;
+                    }
+                    }
 
 
                     pages = main.ParentNode.ChildNodes[12].ChildNodes[1].ChildNodes[0].ChildNodes.Count - 2;
@@ -102,7 +113,7 @@ namespace gdownload.GHent
 
         private void ParseImg(string url)
         {
-            if(Directory.Exists(SavePath + "\\" + Name) == false)
+            if (Directory.Exists(SavePath + "\\" + Name) == false)
             {
                 Directory.CreateDirectory(SavePath + "\\" + Name);
             }
@@ -114,6 +125,7 @@ namespace gdownload.GHent
                     return;
                 }
             }
+
 
             var imgLoad1 = web.Load(url);
 
@@ -141,19 +153,25 @@ namespace gdownload.GHent
             
             using (var wc = new WebClient())
             {
-                wc.DownloadFile(test, test2);
-
-                if(CheckExceed)
+                try
                 {
-                    if(fileManager.isExceeded(test2))
+                    wc.DownloadFile(test, test2);
+
+                    if (CheckExceed)
                     {
-                        File.Delete(test2);
-                        IsExceeded = true;
-                        return;
-                    }       
-                } 
-                
-                downloaded++;
+                        if (fileManager.isExceeded(test2))
+                        {
+                            File.Delete(test2);
+                            IsExceeded = true;
+                            return;
+                        }
+                    }
+
+                    downloaded++;
+                }catch(Exception ex)
+                {
+                    Console.WriteLine("Error downloading "+Name+" ("+imgnr+"): "+ex.Message);
+                }
             }
         }
     }

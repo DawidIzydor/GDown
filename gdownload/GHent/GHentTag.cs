@@ -19,6 +19,8 @@ namespace gdownload.GHent
         string cbrLocation;
 
         public bool IsExceeded { get; private set; } = false;
+        
+        public bool IgnoreOngoing {get; set;} = false;
 
         public GHentTag(string SavePath, string Url, string cbrLocation = "", bool CheckExceed = true)
         {
@@ -49,6 +51,7 @@ namespace gdownload.GHent
                 }catch(Exception) { continue; }
 
                 GHentSite gHentSite = new GHentSite(savePath, link, checkExceeded);
+                gHentSite.IgnoreOngoing = this.IgnoreOngoing;
                 gHentSite.Parse();
 
                 if (cbrLocation != "" && gHentSite.Name != null && (gHentSite.Changed || File.Exists(cbrLocation + "\\" + gHentSite.Name + ".cbr") == false))

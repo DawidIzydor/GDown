@@ -33,6 +33,8 @@ namespace gdownload.GHent
         public void Parse()
         {
             Console.WriteLine("Searching by tag");
+            Console.WriteLine("[IgnoreOngoing]: "+IgnoreOngoing);
+            Console.WriteLine("[checkExceeded]: "+checkExceeded);
             var page = web.Load(url).DocumentNode;
             var trs = page.SelectNodes("//table[contains(@class,'itg')]//tr");
 

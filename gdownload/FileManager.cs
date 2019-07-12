@@ -6,22 +6,24 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace gdownload
+namespace GDownload
 {
     class FileManager
     {
         //TODO
-        private string ExceedJpgFile = @"";
+        private readonly string _exceedJpgFile = @"";
 
-        private string ExceedHash = "9B1F52FF4C49ED065946191D0937FACDC9E75C24E3102558CF78A9B19C96379D";
+        private readonly string _exceedHash = "9B1F52FF4C49ED065946191D0937FACDC9E75C24E3102558CF78A9B19C96379D";
 
         public FileManager()
         {
-            if(ExceedJpgFile != "")
-            ExceedHash = GetChecksum(ExceedJpgFile);
+            if(_exceedJpgFile != "")
+            {
+                _exceedHash = GetChecksum(_exceedJpgFile);
+            }
         }
 
-        public string GetChecksum(string path)
+        private string GetChecksum(string path)
         {
             using (FileStream stream = File.OpenRead(path))
             {
@@ -31,20 +33,13 @@ namespace gdownload
             }
         }
 
-        public bool isExceeded(string compareTo)
+        public bool IsExceeded(string compareTo)
         {
-            if (ExceedHash == "") return false;
+            if (_exceedHash == "") return false;
 
             string compareHash = GetChecksum(compareTo);
 
-            if(compareHash == ExceedHash)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return compareHash == _exceedHash;
         }
     }
 }

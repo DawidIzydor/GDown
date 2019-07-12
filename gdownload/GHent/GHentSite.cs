@@ -1,29 +1,22 @@
-﻿using gdownload.sql;
-using HtmlAgilityPack;
+﻿using HtmlAgilityPack;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace gdownload.GHent
+namespace GDownload.GHent
 {
     class GHentSite
     {
-        HtmlWeb web = new HtmlWeb();
+        readonly HtmlWeb _web = new HtmlWeb();
 
-        readonly string SavePath;
+        readonly string _savePath;
         public string Name { get; private set; }
-        readonly string url;
+        readonly string _url;
 
-        int imgnr = 0;
-        int downloaded = 0;
+        int _imgnr = 0;
+        int _downloaded = 0;
 
-        bool parsed = false;
+        readonly bool _parsed = false;
         public bool IsExceeded { get; private set; } = false;
         public bool Changed { get; private set; } = false;
 
@@ -34,40 +27,41 @@ namespace gdownload.GHent
 
         public bool Stop { get; set; } = false;
 
-        FileManager fileManager;
+        readonly FileManager _fileManager;
 
-        public GHentSite(string SavePath, string url, bool CheckExceed = true)
+        public GHentSite(string savePath, string url, bool checkExceed = true)
         {
-            this.SavePath = SavePath;
-            this.url = url;
-            this.CheckExceed = CheckExceed;
+            this._savePath = savePath;
+            this._url = url;
+            this.CheckExceed = checkExceed;
 
-            if (CheckExceed)
+            if (checkExceed)
             {
-                fileManager = new FileManager();
+                _fileManager = new FileManager();
             }
         }
 
         public void Parse(bool downloadImages = true, bool ignoreDatabase = false)
         {
-            if (parsed) return;
+            if (_parsed) return;
 
             int page = 0;
             int pages = 0;
 
-            HtmlNode main;
+            HtmlDocument doc;
 
             do
             {
                 Changed = false;
 
-                main = web.Load(url + "?p=" + page)?.GetElementbyId("gdt");
+                //main = web.Load(url + "?p=" + page)?.GetElementbyId("gdt");
+                doc = _web.Load(_url + "?p=" + page);
 
-                if (main == null) return;
+                if (doc == null) return;
 
                 if (page == 0)
                 {
-                    Name = main.SelectSingleNode("//body[1]//div[1]//div[2]//h1[1]").InnerHtml;
+                    Name = doc.GetElementbyId("gn").InnerHtml;
                     Name = Name.Replace(':', '_');
                     Name = Name.Replace('/', '_');
                     Name = Name.Replace('\\', '_');
@@ -89,7 +83,7 @@ namespace gdownload.GHent
                     }
 
 
-                    pages = main.ParentNode.ChildNodes[12].ChildNodes[1].ChildNodes[0].ChildNodes.Count - 2;
+                    pages = doc.DocumentNode.ChildNodes[2].ChildNodes[3].ChildNodes[12].ChildNodes[1].ChildNodes[0].ChildNodes.Count - 2;
 
                     Console.WriteLine("Downloading " + Name + ", " + pages + " pages");
                 }
@@ -98,11 +92,9 @@ namespace gdownload.GHent
                     Console.WriteLine("Page " + (page+1) + " of " + pages);
                 }
 
-                if (main == null) return;
-
                 if (!downloadImages) break;
 
-                foreach (var el in main.ChildNodes)
+                foreach (var el in doc.GetElementbyId("gdt").ChildNodes)
                 {
                     if (el.Attributes["class"].Value != "gdtm") continue;
 
@@ -116,26 +108,26 @@ namespace gdownload.GHent
                 page++;
             } while (page < pages && !IsExceeded);
 
-            Console.WriteLine("Downloaded " + downloaded + " images, " + (imgnr - downloaded) + " ignored." + (IsExceeded ? " EXCEEDED!" : ""));
+            Console.WriteLine("Downloaded " + _downloaded + " images, " + (_imgnr - _downloaded) + " ignored." + (IsExceeded ? " EXCEEDED!" : ""));
         }
 
         private void ParseImg(string url)
         {
-            if (Directory.Exists(SavePath + "\\" + Name) == false)
+            if (Directory.Exists(_savePath + "\\" + Name) == false)
             {
-                Directory.CreateDirectory(SavePath + "\\" + Name);
+                Directory.CreateDirectory(_savePath + "\\" + Name);
             }
             else
             {
-                if (File.Exists(SavePath + "\\" + Name + "\\" + imgnr + ".jpg"))
+                if (File.Exists(_savePath + "\\" + Name + "\\" + _imgnr + ".jpg"))
                 {
-                    imgnr++;
+                    _imgnr++;
                     return;
                 }
             }
 
 
-            var imgLoad1 = web.Load(url);
+            var imgLoad1 = _web.Load(url);
 
             var nl = imgLoad1.GetElementbyId("loadfail");
 
@@ -143,7 +135,7 @@ namespace gdownload.GHent
             nlurl = nlurl.Remove(0, nlurl.IndexOf('\'') + 1);
             nlurl = nlurl.Remove(nlurl.IndexOf('\''));
 
-            var imgLoad = web.Load(url + "?nl=" + nlurl);
+            var imgLoad = _web.Load(url + "?nl=" + nlurl);
 
             var a = imgLoad.GetElementbyId("i3");
 
@@ -157,7 +149,7 @@ namespace gdownload.GHent
 
             Changed = true;
 
-            var test2 = SavePath + "\\" + Name + "\\" + imgnr++ + ".jpg";
+            var test2 = _savePath + "\\" + Name + "\\" + _imgnr++ + ".jpg";
 
             using (var wc = new WebClient())
             {
@@ -167,7 +159,7 @@ namespace gdownload.GHent
 
                     if (CheckExceed)
                     {
-                        if (fileManager.isExceeded(test2))
+                        if (_fileManager.IsExceeded(test2))
                         {
                             File.Delete(test2);
                             IsExceeded = true;
@@ -175,11 +167,11 @@ namespace gdownload.GHent
                         }
                     }
 
-                    downloaded++;
+                    _downloaded++;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error downloading " + Name + " (" + imgnr + "): " + ex.Message);
+                    Console.WriteLine("Error downloading " + Name + " (" + _imgnr + "): " + ex.Message);
                 }
             }
         }

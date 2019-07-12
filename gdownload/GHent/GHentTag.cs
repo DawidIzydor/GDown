@@ -7,35 +7,35 @@ using System.Threading.Tasks;
 using System.Xml.XPath;
 using HtmlAgilityPack;
 
-namespace gdownload.GHent
+namespace GDownload.GHent
 {
     class GHentTag
     {
-        string savePath;
-        string url;
-        bool checkExceeded;
-        HtmlWeb web = new HtmlWeb();
-        CBRManager cBRManager = new CBRManager();
-        string cbrLocation;
+        readonly string _savePath;
+        readonly string _url;
+        readonly bool _checkExceeded;
+        readonly HtmlWeb _web = new HtmlWeb();
+        readonly CbrManager _cBrManager = new CbrManager();
+        readonly string _cbrLocation;
 
         public bool IsExceeded { get; private set; } = false;
 
         public bool IgnoreOngoing { get; set; } = false;
 
-        public GHentTag(string SavePath, string Url, string cbrLocation = "", bool CheckExceed = true)
+        public GHentTag(string savePath, string url, string cbrLocation = "", bool checkExceed = true)
         {
-            savePath = SavePath;
-            url = Url;
-            checkExceeded = CheckExceed;
-            this.cbrLocation = cbrLocation;
+            _savePath = savePath;
+            _url = url;
+            _checkExceeded = checkExceed;
+            this._cbrLocation = cbrLocation;
         }
 
         public void Parse()
         {
             Console.WriteLine("Searching by tag");
             Console.WriteLine("[IgnoreOngoing]: " + IgnoreOngoing);
-            Console.WriteLine("[checkExceeded]: " + checkExceeded);
-            var page = web.Load(url).DocumentNode;
+            Console.WriteLine("[checkExceeded]: " + _checkExceeded);
+            var page = _web.Load(_url).DocumentNode;
             var trs = page.SelectNodes("//table[contains(@class,'itg')]//tr");
 
             foreach (var tr in trs)
@@ -49,21 +49,21 @@ namespace gdownload.GHent
 
                 try
                 {
-                    link = tr.ChildNodes[2].ChildNodes[0].ChildNodes[2].ChildNodes[0].Attributes["href"].Value;
+                    link = tr.ChildNodes[2].ChildNodes[0].Attributes["href"].Value;
                 }
                 catch (Exception) { continue; }
 
-                GHentSite gHentSite = new GHentSite(savePath, link, checkExceeded);
+                GHentSite gHentSite = new GHentSite(_savePath, link, _checkExceeded);
                 gHentSite.IgnoreOngoing = this.IgnoreOngoing;
 
                 gHentSite.Parse();
 
                 if (this.IgnoreOngoing && gHentSite.OngoingFound == false)
                 {
-                    if (cbrLocation != "" && gHentSite.Name != null && (gHentSite.Changed || File.Exists(cbrLocation + "\\" + gHentSite.Name + ".cbr") == false))
+                    if (_cbrLocation != "" && gHentSite.Name != null && (gHentSite.Changed || File.Exists(_cbrLocation + "\\" + gHentSite.Name + ".cbr") == false))
                     {
                         Console.WriteLine("Generating new CBR");
-                        if (cBRManager.CreateCbr(savePath + "\\" + gHentSite.Name, cbrLocation + "\\" + gHentSite.Name + ".cbr"))
+                        if (_cBrManager.CreateCbr(_savePath + "\\" + gHentSite.Name, _cbrLocation + "\\" + gHentSite.Name + ".cbr"))
                         {
                             Console.WriteLine("OK");
                         }

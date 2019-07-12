@@ -6,20 +6,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace gdownload
+namespace GDownload
 {
-    class CBRManager
+    class CbrManager
     {
 
-        private bool cbrlocked = false;
+        private bool _cbrlocked = false;
 
         public bool CreateCbr(string frompath, string savepath)
         {
             if (frompath == "" || savepath == "") return false;
 
-            if (cbrlocked) return false;
+            if (_cbrlocked) return false;
 
-            cbrlocked = true;
+            _cbrlocked = true;
 
             try
             {
@@ -33,11 +33,11 @@ namespace gdownload
             }
             catch (Exception)
             {
-                cbrlocked = false;
+                _cbrlocked = false;
                 return false;
             }
 
-            cbrlocked = false;
+            _cbrlocked = false;
             return true;
         }
 

@@ -33,13 +33,11 @@ namespace GDownload.GHent
         public bool Changed { get; private set; }
 
         public bool CheckExceed { get; set; }
-        public bool IgnoreOngoing { get; set; } = false;
-        public bool IsExceeded { get; private set; }
+        public bool IgnoreOngoing { get; set; }
+        public bool Exceeded { get; private set; }
         public string Name { get; private set; }
 
         public bool OngoingFound { get; private set; }
-
-        public bool Stop { get; set; } = false;
 
         public void Parse(bool downloadImages = true, bool ignoreDatabase = false)
         {
@@ -51,80 +49,104 @@ namespace GDownload.GHent
             int page = 0;
             int pages = 0;
 
-            HtmlDocument doc;
-
             do
             {
                 Changed = false;
 
-                //main = web.Load(url + "?p=" + page)?.GetElementbyId("gdt");
-                doc = _web.Load(_url + "?p=" + page);
+                HtmlDocument document = _web.Load(_url + "?p=" + page);
 
-                if (doc == null)
+                if (document != null)
                 {
-                    return;
-                }
-
-                if (page == 0)
-                {
-                    Name = doc.GetElementbyId("gn").InnerHtml;
-                    Name = Name.Replace(':', '_');
-                    Name = Name.Replace('/', '_');
-                    Name = Name.Replace('\\', '_');
-                    Name = Name.Replace('*', '_');
-                    Name = Name.Replace('?', '_');
-                    Name = Name.Replace('"', '_');
-                    Name = Name.Replace('<', '_');
-                    Name = Name.Replace('>', '_');
-                    Name = Name.Replace('|', '_');
-
-                    if (IgnoreOngoing)
+                    if (page == 0)
                     {
-                        if (Name.ToUpper().Contains("ONGOING"))
+                        ParseNameFromDocument(document);
+
+                        if (!Ongoing())
                         {
-                            Console.WriteLine("Ongoing detected, ignoring");
-                            OngoingFound = true;
+                            pages = GetPagesNumber(document);
+
+                            Console.WriteLine("Downloading " + Name + ", " + pages + " pages");
+                        }
+                        else
+                        {
                             return;
                         }
                     }
-
-                    pages = doc.DocumentNode.ChildNodes[2].ChildNodes[3].ChildNodes[12].ChildNodes[1].ChildNodes[0]
-                                .ChildNodes.Count - 2;
-
-                    Console.WriteLine("Downloading " + Name + ", " + pages + " pages");
-                }
-                else
-                {
-                    Console.WriteLine("Page " + (page + 1) + " of " + pages);
-                }
-
-                if (!downloadImages)
-                {
-                    break;
-                }
-
-                foreach (HtmlNode el in doc.GetElementbyId("gdt").ChildNodes)
-                {
-                    if (el.Attributes["class"].Value != "gdtm")
+                    else
                     {
-                        continue;
+                        Console.WriteLine("Page " + (page + 1) + " of " + pages);
                     }
 
-                    HtmlNode link = el.SelectSingleNode(el.XPath + "//div//a");
-
-                    ParseImg(link.Attributes["href"].Value);
-
-                    if (IsExceeded)
+                    if (!downloadImages)
                     {
                         break;
                     }
-                }
 
-                page++;
-            } while (page < pages && !IsExceeded);
+                    foreach (HtmlNode el in document.GetElementbyId("gdt").ChildNodes)
+                    {
+                        if (el.Attributes["class"].Value != "gdtm")
+                        {
+                            continue;
+                        }
+
+                        HtmlNode link = el.SelectSingleNode(el.XPath + "//div//a");
+
+                        ParseImg(link.Attributes["href"].Value);
+
+                        if (Exceeded)
+                        {
+                            break;
+                        }
+                    }
+
+                    page++;
+                }
+                else
+                {
+                    return;
+                }
+            } while (page < pages && !Exceeded);
 
             Console.WriteLine("Downloaded " + _downloaded + " images, " + (_imgnr - _downloaded) + " ignored." +
-                              (IsExceeded ? " EXCEEDED!" : ""));
+                              (Exceeded ? " EXCEEDED!" : ""));
+        }
+
+        private static int GetPagesNumber(HtmlDocument document)
+        {
+            int pages;
+            pages = document.DocumentNode.ChildNodes[2].ChildNodes[3].ChildNodes[12].ChildNodes[1]
+                        .ChildNodes[0]
+                        .ChildNodes.Count - 2;
+            return pages;
+        }
+
+        private bool Ongoing()
+        {
+            if (IgnoreOngoing)
+            {
+                if (Name.ToUpper().Contains("ONGOING"))
+                {
+                    Console.WriteLine("Ongoing detected, ignoring");
+                    OngoingFound = true;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ParseNameFromDocument(HtmlDocument doc)
+        {
+            Name = doc.GetElementbyId("gn").InnerHtml;
+            Name = Name.Replace(':', '_');
+            Name = Name.Replace('/', '_');
+            Name = Name.Replace('\\', '_');
+            Name = Name.Replace('*', '_');
+            Name = Name.Replace('?', '_');
+            Name = Name.Replace('"', '_');
+            Name = Name.Replace('<', '_');
+            Name = Name.Replace('>', '_');
+            Name = Name.Replace('|', '_');
         }
 
         private void ParseImg(string url)
@@ -180,7 +202,7 @@ namespace GDownload.GHent
                         if (_fileManager.IsExceeded(test2))
                         {
                             File.Delete(test2);
-                            IsExceeded = true;
+                            Exceeded = true;
                             return;
                         }
                     }

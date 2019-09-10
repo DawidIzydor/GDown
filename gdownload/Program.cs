@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using GDownload.GHent;
 
 namespace GDownload
@@ -14,25 +15,23 @@ namespace GDownload
             // ReSharper disable once CollectionNeverUpdated.Local
             List<string> htmlList = new List<string>();
 
-            CbrManager cBRManager = new CbrManager();
+            CbrHelper cBrHelper = new CbrHelper();
 
             if (!Directory.Exists(CBRLocation))
             {
                 Directory.CreateDirectory(CBRLocation);
             }
 
-            foreach (string html in htmlList)
+            foreach (GHentSite gHent in htmlList.Select(html => new GHentSite(SavePath, html)))
             {
-                GHentSite gHent = new GHentSite(SavePath, html);
-
                 gHent.Parse();
 
                 if (gHent.Changed)
                 {
-                    cBRManager.CreateCbr(SavePath + "\\" + gHent.Name, CBRLocation + "\\" + gHent.Name + ".cbr");
+                    cBrHelper.CreateCbr(SavePath + "\\" + gHent.Name, CBRLocation + "\\" + gHent.Name + ".cbr");
                 }
 
-                if (gHent.IsExceeded)
+                if (gHent.Exceeded)
                 {
                     break;
                 }

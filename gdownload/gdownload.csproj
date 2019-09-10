@@ -55,7 +55,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CBRManager.cs" />
+    <Compile Include="CbrHelper.cs" />
     <Compile Include="FileManager.cs" />
     <Compile Include="GHent\GHentSite.cs" />
     <Compile Include="GHent\GHentTag.cs" />

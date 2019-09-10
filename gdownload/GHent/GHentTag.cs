@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.XPath;
 using HtmlAgilityPack;
 
 namespace GDownload.GHent
@@ -18,7 +13,7 @@ namespace GDownload.GHent
         readonly CbrManager _cBrManager = new CbrManager();
         readonly string _cbrLocation;
 
-        public bool IsExceeded { get; private set; } = false;
+        public bool IsExceeded { get; private set; }
 
         public bool IgnoreOngoing { get; set; } = false;
 
@@ -27,7 +22,7 @@ namespace GDownload.GHent
             _savePath = savePath;
             _url = url;
             _checkExceeded = checkExceed;
-            this._cbrLocation = cbrLocation;
+            _cbrLocation = cbrLocation;
         }
 
         public void Parse()
@@ -54,11 +49,11 @@ namespace GDownload.GHent
                 catch (Exception) { continue; }
 
                 GHentSite gHentSite = new GHentSite(_savePath, link, _checkExceeded);
-                gHentSite.IgnoreOngoing = this.IgnoreOngoing;
+                gHentSite.IgnoreOngoing = IgnoreOngoing;
 
                 gHentSite.Parse();
 
-                if (this.IgnoreOngoing && gHentSite.OngoingFound == false)
+                if (IgnoreOngoing && gHentSite.OngoingFound == false)
                 {
                     if (_cbrLocation != "" && gHentSite.Name != null && (gHentSite.Changed || File.Exists(_cbrLocation + "\\" + gHentSite.Name + ".cbr") == false))
                     {

@@ -1,30 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GDownload
 {
-    class CbrManager
+    internal class CbrManager
     {
-
-        private bool _cbrlocked = false;
+        private bool _cbrlocked;
 
         public bool CreateCbr(string frompath, string savepath)
         {
-            if (frompath == "" || savepath == "") return false;
+            if (frompath == "" || savepath == "")
+            {
+                return false;
+            }
 
-            if (_cbrlocked) return false;
+            if (_cbrlocked)
+            {
+                return false;
+            }
 
             _cbrlocked = true;
 
             try
             {
-
-                if (File.Exists(savepath) == true)
+                if (File.Exists(savepath))
                 {
                     File.Delete(savepath);
                 }
@@ -40,6 +40,5 @@ namespace GDownload
             _cbrlocked = false;
             return true;
         }
-
     }
 }

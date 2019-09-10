@@ -1,39 +1,28 @@
-﻿using HtmlAgilityPack;
-using System;
+﻿using System;
 using System.IO;
 using System.Net;
+using HtmlAgilityPack;
 
 namespace GDownload.GHent
 {
-    class GHentSite
+    internal class GHentSite
     {
-        readonly HtmlWeb _web = new HtmlWeb();
+        private readonly FileManager _fileManager;
 
-        readonly string _savePath;
-        public string Name { get; private set; }
-        readonly string _url;
+        private readonly bool _parsed = false;
 
-        int _imgnr = 0;
-        int _downloaded = 0;
+        private readonly string _savePath;
+        private readonly string _url;
+        private readonly HtmlWeb _web = new HtmlWeb();
+        private int _downloaded;
 
-        readonly bool _parsed = false;
-        public bool IsExceeded { get; private set; } = false;
-        public bool Changed { get; private set; } = false;
-
-        public bool CheckExceed { get; set; } = false;
-        public bool IgnoreOngoing { get; set; } = false;
-
-        public bool OngoingFound { get; private set; } = false;
-
-        public bool Stop { get; set; } = false;
-
-        readonly FileManager _fileManager;
+        private int _imgnr;
 
         public GHentSite(string savePath, string url, bool checkExceed = true)
         {
-            this._savePath = savePath;
-            this._url = url;
-            this.CheckExceed = checkExceed;
+            _savePath = savePath;
+            _url = url;
+            CheckExceed = checkExceed;
 
             if (checkExceed)
             {
@@ -41,9 +30,23 @@ namespace GDownload.GHent
             }
         }
 
+        public bool Changed { get; private set; }
+
+        public bool CheckExceed { get; set; }
+        public bool IgnoreOngoing { get; set; } = false;
+        public bool IsExceeded { get; private set; }
+        public string Name { get; private set; }
+
+        public bool OngoingFound { get; private set; }
+
+        public bool Stop { get; set; } = false;
+
         public void Parse(bool downloadImages = true, bool ignoreDatabase = false)
         {
-            if (_parsed) return;
+            if (_parsed)
+            {
+                return;
+            }
 
             int page = 0;
             int pages = 0;
@@ -57,7 +60,10 @@ namespace GDownload.GHent
                 //main = web.Load(url + "?p=" + page)?.GetElementbyId("gdt");
                 doc = _web.Load(_url + "?p=" + page);
 
-                if (doc == null) return;
+                if (doc == null)
+                {
+                    return;
+                }
 
                 if (page == 0)
                 {
@@ -77,38 +83,48 @@ namespace GDownload.GHent
                         if (Name.ToUpper().Contains("ONGOING"))
                         {
                             Console.WriteLine("Ongoing detected, ignoring");
-                            this.OngoingFound = true;
+                            OngoingFound = true;
                             return;
                         }
                     }
 
-
-                    pages = doc.DocumentNode.ChildNodes[2].ChildNodes[3].ChildNodes[12].ChildNodes[1].ChildNodes[0].ChildNodes.Count - 2;
+                    pages = doc.DocumentNode.ChildNodes[2].ChildNodes[3].ChildNodes[12].ChildNodes[1].ChildNodes[0]
+                                .ChildNodes.Count - 2;
 
                     Console.WriteLine("Downloading " + Name + ", " + pages + " pages");
                 }
                 else
                 {
-                    Console.WriteLine("Page " + (page+1) + " of " + pages);
+                    Console.WriteLine("Page " + (page + 1) + " of " + pages);
                 }
 
-                if (!downloadImages) break;
-
-                foreach (var el in doc.GetElementbyId("gdt").ChildNodes)
+                if (!downloadImages)
                 {
-                    if (el.Attributes["class"].Value != "gdtm") continue;
+                    break;
+                }
 
-                    var link = el.SelectSingleNode(el.XPath + "//div//a");
+                foreach (HtmlNode el in doc.GetElementbyId("gdt").ChildNodes)
+                {
+                    if (el.Attributes["class"].Value != "gdtm")
+                    {
+                        continue;
+                    }
+
+                    HtmlNode link = el.SelectSingleNode(el.XPath + "//div//a");
 
                     ParseImg(link.Attributes["href"].Value);
 
-                    if (IsExceeded) break;
+                    if (IsExceeded)
+                    {
+                        break;
+                    }
                 }
 
                 page++;
             } while (page < pages && !IsExceeded);
 
-            Console.WriteLine("Downloaded " + _downloaded + " images, " + (_imgnr - _downloaded) + " ignored." + (IsExceeded ? " EXCEEDED!" : ""));
+            Console.WriteLine("Downloaded " + _downloaded + " images, " + (_imgnr - _downloaded) + " ignored." +
+                              (IsExceeded ? " EXCEEDED!" : ""));
         }
 
         private void ParseImg(string url)
@@ -126,32 +142,34 @@ namespace GDownload.GHent
                 }
             }
 
+            HtmlDocument imgLoad1 = _web.Load(url);
 
-            var imgLoad1 = _web.Load(url);
+            HtmlNode nl = imgLoad1.GetElementbyId("loadfail");
 
-            var nl = imgLoad1.GetElementbyId("loadfail");
-
-            var nlurl = nl.Attributes["onclick"].Value;
+            string nlurl = nl.Attributes["onclick"].Value;
             nlurl = nlurl.Remove(0, nlurl.IndexOf('\'') + 1);
             nlurl = nlurl.Remove(nlurl.IndexOf('\''));
 
-            var imgLoad = _web.Load(url + "?nl=" + nlurl);
+            HtmlDocument imgLoad = _web.Load(url + "?nl=" + nlurl);
 
-            var a = imgLoad.GetElementbyId("i3");
+            HtmlNode a = imgLoad.GetElementbyId("i3");
 
-            if (a == null) return;
+            if (a == null)
+            {
+                return;
+            }
 
-            var img = a.SelectSingleNode(a.XPath + "//a//img");
+            HtmlNode img = a.SelectSingleNode(a.XPath + "//a//img");
 
-            var imgLink = img.Attributes["src"].Value;
+            string imgLink = img.Attributes["src"].Value;
 
-            var test = new Uri(imgLink);
+            Uri test = new Uri(imgLink);
 
             Changed = true;
 
-            var test2 = _savePath + "\\" + Name + "\\" + _imgnr++ + ".jpg";
+            string test2 = _savePath + "\\" + Name + "\\" + _imgnr++ + ".jpg";
 
-            using (var wc = new WebClient())
+            using (WebClient wc = new WebClient())
             {
                 try
                 {

@@ -1,33 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using GDownload.GHent;
 
-namespace gdownload
+namespace GDownload
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
             string SavePath = @"";
             string CBRLocation = @"";
 
-            List<string> htmlList = new List<string>()
-            {
-            };
+            // ReSharper disable once CollectionNeverUpdated.Local
+            List<string> htmlList = new List<string>();
 
-            CBRManager cBRManager = new CBRManager();
+            CbrManager cBRManager = new CbrManager();
 
-            if(!Directory.Exists(CBRLocation))
+            if (!Directory.Exists(CBRLocation))
             {
                 Directory.CreateDirectory(CBRLocation);
             }
 
-            foreach (var html in htmlList)
+            foreach (string html in htmlList)
             {
-                GHent gHent = new GHent(SavePath, html);
+                GHentSite gHent = new GHentSite(SavePath, html);
 
                 gHent.Parse();
 
@@ -36,7 +32,7 @@ namespace gdownload
                     cBRManager.CreateCbr(SavePath + "\\" + gHent.Name, CBRLocation + "\\" + gHent.Name + ".cbr");
                 }
 
-                if(gHent.isExceeded)
+                if (gHent.IsExceeded)
                 {
                     break;
                 }

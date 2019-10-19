@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace gdownload
+﻿namespace gdownload
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            string SavePath = @"";
+            /*string SavePath = @"";
             string CBRLocation = @"";
 
             List<string> htmlList = new List<string>()
@@ -40,7 +33,7 @@ namespace gdownload
                 {
                     break;
                 }
-            }
+            }*/
         }
     }
 }

@@ -1,87 +1,48 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.XPath;
 using HtmlAgilityPack;
 
 namespace GDownload.GHent
 {
-    class GHentTag
+    // ReSharper disable once UnusedMember.Global
+    internal class GHentTag
     {
-        readonly string _savePath;
-        readonly string _url;
-        readonly bool _checkExceeded;
-        readonly HtmlWeb _web = new HtmlWeb();
-        readonly CbrManager _cBrManager = new CbrManager();
-        readonly string _cbrLocation;
+        private readonly CbrHelper _cBrHelper = new CbrHelper();
 
-        public bool IsExceeded { get; private set; } = false;
-
-        public bool IgnoreOngoing { get; set; } = false;
-
-        public GHentTag(string savePath, string url, string cbrLocation = "", bool checkExceed = true)
+        public GHentTag(string savePath, string url)
         {
-            _savePath = savePath;
-            _url = url;
-            _checkExceeded = checkExceed;
-            this._cbrLocation = cbrLocation;
+            SavePath = savePath;
+            Url = url;
         }
 
+        // ReSharper disable once UnassignedGetOnlyAutoProperty
+        public string CbrLocation { get; }
+        public bool CheckExceeded { get; } = true;
+
+        public bool Exceeded { get; private set; }
+
+        public bool IgnoreOngoing { get; set; } = false;
+        public string SavePath { get; }
+        public string Url { get; }
+
+        // ReSharper disable once UnusedMember.Global
         public void Parse()
         {
             Console.WriteLine("Searching by tag");
             Console.WriteLine("[IgnoreOngoing]: " + IgnoreOngoing);
-            Console.WriteLine("[checkExceeded]: " + _checkExceeded);
-            var page = _web.Load(_url).DocumentNode;
-            var trs = page.SelectNodes("//table[contains(@class,'itg')]//tr");
+            Console.WriteLine("[checkExceeded]: " + CheckExceeded);
 
-            foreach (var tr in trs)
+            HtmlNodeCollection tableRows = DownloadTableRows();
+
+            foreach (HtmlNode tableRow in tableRows)
             {
-                if (tr.ChildNodes[0].Name == "th")
+                if (!ParseRow(tableRow))
                 {
-                    continue;
-                }
-
-                string link;
-
-                try
-                {
-                    link = tr.ChildNodes[2].ChildNodes[0].Attributes["href"].Value;
-                }
-                catch (Exception) { continue; }
-
-                GHentSite gHentSite = new GHentSite(_savePath, link, _checkExceeded);
-                gHentSite.IgnoreOngoing = this.IgnoreOngoing;
-
-                gHentSite.Parse();
-
-                if (this.IgnoreOngoing && gHentSite.OngoingFound == false)
-                {
-                    if (_cbrLocation != "" && gHentSite.Name != null && (gHentSite.Changed || File.Exists(_cbrLocation + "\\" + gHentSite.Name + ".cbr") == false))
-                    {
-                        Console.WriteLine("Generating new CBR");
-                        if (_cBrManager.CreateCbr(_savePath + "\\" + gHentSite.Name, _cbrLocation + "\\" + gHentSite.Name + ".cbr"))
-                        {
-                            Console.WriteLine("OK");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Error");
-                        }
-                    }
-                }
-
-                if (gHentSite.IsExceeded)
-                {
-                    IsExceeded = true;
                     break;
                 }
             }
 
-            if (IsExceeded)
+            if (Exceeded)
             {
                 Console.WriteLine("Exceeded");
             }
@@ -89,6 +50,98 @@ namespace GDownload.GHent
             {
                 Console.WriteLine("Tag downloaded OK");
             }
+        }
+
+        private bool CanGenerateCbrFromSite(GHentSite gHentSite) => gHentSite != null &&
+                                                                    IgnoreOngoing &&
+                                                                    gHentSite.OngoingFound == false &&
+                                                                    CbrLocation != "" &&
+                                                                    gHentSite.Name != null &&
+                                                                    (gHentSite.Changed ||
+                                                                     File.Exists(
+                                                                         CbrLocation + "\\" + gHentSite.Name +
+                                                                         ".cbr") == false);
+
+        private GHentSite DownloadGHentSite(string link)
+        {
+            GHentSite gHentSite = new GHentSite(SavePath, link, CheckExceeded) {IgnoreOngoing = IgnoreOngoing};
+            gHentSite.Parse();
+            return gHentSite;
+        }
+
+        private GHentSite DownloadGHentSiteFromRow(HtmlNode tableRow)
+        {
+            GHentSite gHentSite = null;
+
+            if (!SkipTableHeader(tableRow.ChildNodes[0].Name))
+            {
+                string link = TryGetLinkFromRow(tableRow);
+
+                if (link != "")
+                {
+                    gHentSite = DownloadGHentSite(link);
+                }
+            }
+
+            return gHentSite;
+        }
+
+        private HtmlNodeCollection DownloadTableRows()
+        {
+            HtmlNode page = new HtmlWeb().Load(Url).DocumentNode;
+            HtmlNodeCollection tableRows = page.SelectNodes("//table[contains(@class,'itg')]//tr");
+            return tableRows;
+        }
+
+        private void GenerateCbr(GHentSite gHentSite)
+        {
+            if (CanGenerateCbrFromSite(gHentSite))
+            {
+                Console.WriteLine("Generating new CBR");
+
+                if (_cBrHelper.CreateCbr(SavePath + "\\" + gHentSite.Name,
+                    CbrLocation + "\\" + gHentSite.Name + ".cbr"))
+                {
+                    Console.WriteLine("OK");
+                }
+                else
+                {
+                    Console.WriteLine("Error");
+                }
+            }
+        }
+
+        private bool ParseRow(HtmlNode tableRow)
+        {
+            GHentSite gHentSite = DownloadGHentSiteFromRow(tableRow);
+
+            GenerateCbr(gHentSite);
+
+            if (gHentSite?.Exceeded ?? false)
+            {
+                Exceeded = true;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool SkipTableHeader(string name) => name == "th";
+
+        private static string TryGetLinkFromRow(HtmlNode tableRow)
+        {
+            string link = "";
+
+            try
+            {
+                link = tableRow.ChildNodes[2].ChildNodes[0].Attributes["href"].Value;
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Problem with parsing " + link);
+            }
+
+            return link;
         }
     }
 }

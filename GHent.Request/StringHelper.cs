@@ -1,8 +1,8 @@
-﻿namespace GHentDownloaderLibrary.Helpers
+﻿namespace GHent.RequestProcessor
 {
     public static class StringHelper
     {
-        public static string RemoveIllegalCharacters(string str)
+        public static string RemoveIllegalCharacters(this string str)
         {
             string ret = str;
             ret = ret.Replace(':', '_');

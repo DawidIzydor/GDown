@@ -51,15 +51,12 @@ namespace GHent.RequestProcessor
         private static async Task<string> DownloadInternalAsync(Request albumRequest, IProgress<DownloadProgressReport> progress,
             CancellationToken cancellationToken)
         {
-            var albumRequestSavePath = albumRequest.SavePath;
-            var netPath = albumRequest.DownloadPath;
-            var document = await HtmlWebSingleton.Instance.LoadFromWebAsync(netPath.ToString(), cancellationToken)
+            var document = await HtmlWebSingleton.Instance.LoadFromWebAsync(albumRequest.DownloadPath.ToString(), cancellationToken)
                 .ConfigureAwait(false);
             var pages = ParsePagesCount(document);
-
             var name = document.GetElementbyId("gn").InnerHtml.RemoveIllegalCharacters();
 
-            var savePath = Path.Combine(albumRequestSavePath, name);
+            var savePath = Path.Combine(albumRequest.SavePath, name);
             if (!Directory.Exists(savePath))
             {
                 Directory.CreateDirectory(savePath);
@@ -73,7 +70,7 @@ namespace GHent.RequestProcessor
             for (var page = pagesToIgnore; page < pages; page++)
             {
                 var htmlDocument = await HtmlWebSingleton.Instance
-                    .LoadFromWebAsync(netPath + "?p=" + page, cancellationToken).ConfigureAwait(false);
+                    .LoadFromWebAsync(albumRequest.DownloadPath + "?p=" + page, cancellationToken).ConfigureAwait(false);
                 var gdt = htmlDocument.GetElementbyId("gdt");
 
                 // ReSharper disable once StringLiteralTypo

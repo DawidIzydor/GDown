@@ -9,6 +9,6 @@
         <Label Content="Path" />
         <TextBox Text="" x:Name="PathBox" />
         <CheckBox Content="Regenerate existing" x:Name="RegenerateCheck"></CheckBox>
-        <Button x:Name="GenerateButon" Content="Generate" Click="GenerateButon_Click"></Button>
+        <Button x:Name="GenerateButton" Content="Generate" Click="GenerateButton_Click"></Button>
     </StackPanel>
 </Window>

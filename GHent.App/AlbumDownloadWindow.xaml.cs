@@ -24,19 +24,6 @@ namespace GHent.App
             SavePath.Text = AppSettings.Default.LastSavePath;
         }
 
-        /// <exception cref="T:System.OverflowException">
-        ///     <paramref>s</paramref> represents a number less than
-        ///     <see cref="F:System.Int32.MinValue"></see> or greater than <see cref="F:System.Int32.MaxValue"></see>.
-        /// </exception>
-        /// <exception cref="T:System.IO.DirectoryNotFoundException">
-        ///     The specified path is invalid (for example, it is on an
-        ///     unmapped drive).
-        /// </exception>
-        /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
-        /// <exception cref="T:System.IO.IOException">
-        ///     The directory specified by path is a file.   -or-   The network name is not
-        ///     known.
-        /// </exception>
         /// <exception cref="T:System.AggregateException">
         ///     An aggregate exception containing all the exceptions thrown by the
         ///     registered callbacks on the associated <see cref="T:System.Threading.CancellationToken" />.
@@ -115,7 +102,9 @@ namespace GHent.App
         /// </exception>
         /// <exception cref="T:GHent.RequestProcessor.TransferExceededException">Transfer was exceeded</exception>
         /// <exception cref="T:System.AggregateException"></exception>
-        private async Task<string> DownloadAsync(IProgress<DownloadProgressReport> progress,
+        /// <exception cref="T:System.ArgumentNullException"><paramref /> is <see langword="null" />.</exception>
+        /// <exception cref="T:System.ArgumentOutOfRangeException">MessageBox result not found</exception>
+        private Task<string> DownloadAsync(IProgress<DownloadProgressReport> progress,
             CancellationToken cancellationToken)
         {
             var savePath = SavePath.Text;
@@ -132,8 +121,7 @@ namespace GHent.App
                 SavePath = savePath
             };
 
-            return await AlbumRequestProcessor.DownloadAsync(albumRequest, progress, cancellationToken)
-                .ConfigureAwait(false);
+            return AlbumRequestProcessor.DownloadAsync(albumRequest, progress, cancellationToken);
         }
 
         /// <exception cref="T:System.IO.IOException">
@@ -147,11 +135,11 @@ namespace GHent.App
         ///     unmapped drive).
         /// </exception>
         /// <exception cref="T:System.ArgumentOutOfRangeException">MessageBox result not found</exception>
-        private static bool VerifyDirectory(string savePath)
+        private static void VerifyDirectory(string savePath)
         {
             if (Directory.Exists(savePath))
             {
-                return true;
+                return;
             }
 
             var result = MessageBox.Show("Save directory does not exist, create it?", "Question",
@@ -160,7 +148,7 @@ namespace GHent.App
             {
                 case MessageBoxResult.Yes:
                     Directory.CreateDirectory(savePath);
-                    return true;
+                    return;
                 case MessageBoxResult.No:
                     throw new DirectoryNotFoundException();
                 default:

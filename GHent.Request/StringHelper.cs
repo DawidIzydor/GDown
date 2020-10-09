@@ -1,6 +1,6 @@
 ﻿namespace GHent.RequestProcessor
 {
-    public static class StringHelper
+    internal static class StringHelper
     {
         public static string RemoveIllegalCharacters(this string str)
         {

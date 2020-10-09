@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\GHent.Models\GHent.Models.csproj" />
     <ProjectReference Include="..\GHent.Request\GHent.RequestProcessor.csproj" />
+    <ProjectReference Include="..\GHent.Tools\GHent.Tools.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,12 +1,11 @@
 ﻿using System;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using GHent.Models;
 using GHent.RequestProcessor;
+using GHent.Tools;
 
 namespace GHent.App
 {
@@ -32,16 +31,18 @@ namespace GHent.App
         {
             try
             {
-                Log("Started");
-                var savePathText = SavePath.Text;
                 ProgressBar.Value = 0;
                 DownloadButton.Visibility = Visibility.Collapsed;
                 CancelButton.Visibility = Visibility.Visible;
-                var directory = await DownloadAsync(new Progress<DownloadProgressReport>(ProgressHandler),
+                Log("Started");
+                var savePath = SavePath.Text;
+                var downloadUri = new Uri(SourceTextBox.Text);
+
+                var directory = await DownloadAsync(savePath, downloadUri,
+                    new Progress<DownloadProgressReport>(ProgressHandler),
                     _cancellationTokenSource.Token).ConfigureAwait(true);
 
-                var filename = directory.Split('/').Last();
-                ZipFile.CreateFromDirectory(directory, Path.Combine(savePathText, filename));
+                CbrGenerator.GenerateCbrFromDirectory(directory, savePath, true);
             }
             catch (OperationCanceledException)
             {
@@ -74,7 +75,8 @@ namespace GHent.App
 
         private void ProgressHandler(DownloadProgressReport report)
         {
-            ProgressBar.Value = report.All * 100.0f / report.Finished;
+            ProgressBar.Value = report.Finished * 100.0f / report.All;
+
             Log($"Downloaded {report.FinishedPath}");
         }
 
@@ -102,16 +104,10 @@ namespace GHent.App
         /// </exception>
         /// <exception cref="T:GHent.RequestProcessor.TransferExceededException">Transfer was exceeded</exception>
         /// <exception cref="T:System.AggregateException"></exception>
-        /// <exception cref="T:System.ArgumentNullException"><paramref /> is <see langword="null" />.</exception>
         /// <exception cref="T:System.ArgumentOutOfRangeException">MessageBox result not found</exception>
-        private Task<string> DownloadAsync(IProgress<DownloadProgressReport> progress,
+        private static Task<string> DownloadAsync(string savePath, Uri downloadUri, IProgress<DownloadProgressReport> progress,
             CancellationToken cancellationToken)
         {
-            var savePath = SavePath.Text;
-
-            var downloadUri = new Uri(SourceTextBox.Text);
-
-
             SaveLastUsedPaths(downloadUri, savePath);
             VerifyDirectory(savePath);
 

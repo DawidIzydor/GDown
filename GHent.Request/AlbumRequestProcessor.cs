@@ -92,9 +92,7 @@ namespace GHent.RequestProcessor
                 var finishedTask = await Task.WhenAny(tasks).ConfigureAwait(false);
                 tasks.Remove(finishedTask);
 
-                // ReSharper disable once AsyncConverter.AsyncWait
-                // ReSharper disable once ExceptionNotDocumented
-                report.FinishedPath = finishedTask.Result;
+                report.FinishedPath = await finishedTask.ConfigureAwait(false);
                 report.Finished++;
                 progress.Report(report);
             }

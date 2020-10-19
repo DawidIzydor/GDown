@@ -14,7 +14,7 @@ namespace GHent.App
     /// </summary>
     public partial class AlbumDownloadWindow
     {
-        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         public AlbumDownloadWindow()
         {
@@ -34,6 +34,7 @@ namespace GHent.App
                 ProgressBar.Value = 0;
                 DownloadButton.Visibility = Visibility.Collapsed;
                 CancelButton.Visibility = Visibility.Visible;
+                RecreateCancellationTokenSource();
                 Log("Started");
                 var savePath = SavePath.Text;
                 var downloadUri = new Uri(SourceTextBox.Text);
@@ -71,6 +72,12 @@ namespace GHent.App
                 CancelButton.Visibility = Visibility.Collapsed;
                 Log("Finished");
             }
+        }
+
+        private void RecreateCancellationTokenSource()
+        {
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = new CancellationTokenSource();
         }
 
         private void ProgressHandler(DownloadProgressReport report)

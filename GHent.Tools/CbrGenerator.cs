@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace GHent.Tools
 {
-    public class CbrGenerator
+    public static class CbrGenerator
     {
         /// <exception cref="T:System.IO.DirectoryNotFoundException">
         ///     <paramref name="sourceDirectory" /> is invalid or does not

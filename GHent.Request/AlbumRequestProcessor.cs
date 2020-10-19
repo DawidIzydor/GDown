@@ -47,7 +47,6 @@ namespace GHent.RequestProcessor
         /// <exception cref="T:System.IO.IOException">The directory specified by <paramref>path</paramref> is a file.   -or-   The network name is not known.</exception>
         /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
-        /// <exception cref="T:System.AggregateException">The task was canceled. The <see cref="P:System.AggregateException.InnerExceptions"></see> collection contains a <see cref="T:System.Threading.Tasks.TaskCanceledException"></see> object.   -or-   An exception was thrown during the execution of the task. The <see cref="P:System.AggregateException.InnerExceptions"></see> collection contains information about the exception or exceptions.</exception>
         private static async Task<string> DownloadInternalAsync(Request albumRequest, IProgress<DownloadProgressReport> progress,
             CancellationToken cancellationToken)
         {

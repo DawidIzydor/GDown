@@ -118,7 +118,7 @@ namespace GHent.App
             SaveLastUsedPaths(downloadUri, savePath);
             VerifyDirectory(savePath);
 
-            var albumRequest = new AlbumRequest
+            var albumRequest = new ImageRequest()
             {
                 DownloadPath = downloadUri,
                 SavePath = savePath

@@ -21,8 +21,8 @@ namespace GHent.RequestProcessor
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
         /// <exception cref="T:System.AggregateException"></exception>
         /// <exception cref="TransferExceededException">Transfer exceeded</exception>
-        public static Task<string> DownloadAsync(Request albumRequest, IProgress<DownloadProgressReport> progress,
-            CancellationToken cancellationToken)
+        public static Task<string> DownloadAsync(IRequest albumRequest, IProgress<DownloadProgressReport> progress,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -47,8 +47,8 @@ namespace GHent.RequestProcessor
         /// <exception cref="T:System.IO.IOException">The directory specified by <paramref>path</paramref> is a file.   -or-   The network name is not known.</exception>
         /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
-        private static async Task<string> DownloadInternalAsync(Request albumRequest, IProgress<DownloadProgressReport> progress,
-            CancellationToken cancellationToken)
+        private static async Task<string> DownloadInternalAsync(IRequest albumRequest, IProgress<DownloadProgressReport> progress,
+            CancellationToken cancellationToken = default)
         {
             var albumRequestSavePath = albumRequest.SavePath;
             var netPath = albumRequest.DownloadPath;

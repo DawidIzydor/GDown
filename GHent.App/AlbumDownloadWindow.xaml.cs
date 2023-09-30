@@ -46,15 +46,23 @@ namespace GHent.App
             try
             {
                 Log("Started");
-                var savePathText = SavePath.Text;
-                ProgressBar.Value = 0;
-                DownloadButton.Visibility = Visibility.Collapsed;
-                CancelButton.Visibility = Visibility.Visible;
-                var directory = await DownloadAsync(new Progress<DownloadProgressReport>(ProgressHandler),
+                ResetDownloadUiElements();
+
+                var savePath = SavePath.Text;
+                var downloadUri = new Uri(SourceTextBox.Text);
+
+                VerifyDirectoryExists(savePath);
+
+                var directoryPath = await DownloadAsync(new Progress<DownloadProgressReport>(ProgressHandler), savePath, downloadUri,
                     _cancellationTokenSource.Token).ConfigureAwait(true);
 
-                var filename = directory.Split('/').Last();
-                ZipFile.CreateFromDirectory(directory, Path.Combine(savePathText, filename));
+                var saveCbr = saveCbrCheckbox.IsChecked ?? false;
+                if(saveCbr)
+                {
+                    string cbrFileName = GetCbrFileName(savePath, directoryPath);
+                    Log($"Will save {directoryPath} into {cbrFileName}");
+                    ZipFile.CreateFromDirectory(directoryPath, cbrFileName);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -75,7 +83,7 @@ namespace GHent.App
             }
             catch (Exception ex)
             {
-                Log($"Exception during downloading: {ex.Message}");
+                Log($"Exception during downloading: {ex.Message}: {ex.StackTrace}");
             }
             finally
             {
@@ -83,6 +91,21 @@ namespace GHent.App
                 CancelButton.Visibility = Visibility.Collapsed;
                 Log("Finished");
             }
+        }
+
+        private static string GetCbrFileName(string savePathText, string directoryPath)
+        {
+            var dirSplit = directoryPath.Split('\\');
+            var filename = dirSplit[dirSplit.Length - 1] != "" ? dirSplit[dirSplit.Length - 1] : dirSplit[dirSplit.Length - 2];
+            var cbrFileName = Path.Combine(savePathText, filename) + ".cbr";
+            return cbrFileName;
+        }
+
+        private void ResetDownloadUiElements()
+        {
+            ProgressBar.Value = 0;
+            DownloadButton.Visibility = Visibility.Collapsed;
+            CancelButton.Visibility = Visibility.Visible;
         }
 
         private void ProgressHandler(DownloadProgressReport report)
@@ -115,16 +138,10 @@ namespace GHent.App
         /// </exception>
         /// <exception cref="T:GHent.RequestProcessor.TransferExceededException">Transfer was exceeded</exception>
         /// <exception cref="T:System.AggregateException"></exception>
-        private async Task<string> DownloadAsync(IProgress<DownloadProgressReport> progress,
+        private async Task<string> DownloadAsync(IProgress<DownloadProgressReport> progress, string savePath, Uri downloadUri,
             CancellationToken cancellationToken)
         {
-            var savePath = SavePath.Text;
-
-            var downloadUri = new Uri(SourceTextBox.Text);
-
-
             SaveLastUsedPaths(downloadUri, savePath);
-            VerifyDirectory(savePath);
 
             var albumRequest = new AlbumRequest
             {
@@ -147,7 +164,7 @@ namespace GHent.App
         ///     unmapped drive).
         /// </exception>
         /// <exception cref="T:System.ArgumentOutOfRangeException">MessageBox result not found</exception>
-        private static bool VerifyDirectory(string savePath)
+        private static bool VerifyDirectoryExists(string savePath)
         {
             if (Directory.Exists(savePath))
             {

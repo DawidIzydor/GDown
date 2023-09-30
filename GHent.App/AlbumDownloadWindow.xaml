@@ -18,7 +18,7 @@
             <Button x:Name="BrowseSavePathButton" Content="Browse" Grid.Column="1" Click="BrowseSavePathButton_Click"
                     IsEnabled="False" />
         </Grid>
-        <CheckBox Content="Create CBR" IsChecked="True"></CheckBox>
+        <CheckBox x:Name="saveCbrCheckbox" Content="Create CBR" IsChecked="True"></CheckBox>
         <Button x:Name="DownloadButton" Content="Download" Margin="0, 1, 0, 1" Click="DownloadButton_Click" />
         <Button x:Name="CancelButton" Content="Cancel" Visibility="Collapsed" Click="CancelButton_Click" />
         <Label Content="Progress"></Label>

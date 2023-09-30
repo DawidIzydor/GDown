@@ -25,7 +25,7 @@ namespace GHent.App
 
             foreach (var dir in dirs)
             {
-                var dirName = dir.Split("/").Last();
+                var dirName = dir.Split("\\").Last();
                 var cbrPath = $"{Path.Combine(path, dirName)}.cbr";
                 if (regenerate == false && File.Exists(cbrPath))
                 {

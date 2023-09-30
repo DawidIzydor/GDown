@@ -7,9 +7,14 @@ using System.Threading.Tasks;
 using GHent.Models;
 using GHent.RequestProcessor.Singleton;
 using HtmlAgilityPack;
+using Newtonsoft.Json;
 
 namespace GHent.RequestProcessor
 {
+    class AlbumInfo
+    {
+        public string DownloadUrl { get; set;}
+    }
     public static class AlbumRequestProcessor
     {
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
@@ -64,6 +69,23 @@ namespace GHent.RequestProcessor
             {
                 Directory.CreateDirectory(savePath);
             }
+
+            string albumInfoPath = Path.Combine(savePath, "albuminfo.json");
+            AlbumInfo albumInfo;
+            if (File.Exists(albumInfoPath))
+            {
+                var albumInfoJson = File.ReadAllText(albumInfoPath);
+                albumInfo = JsonConvert.DeserializeObject<AlbumInfo>(albumInfoJson);
+            }
+            else
+            {
+                albumInfo = new AlbumInfo();
+                albumInfo.DownloadUrl = albumRequest.DownloadPath.AbsoluteUri;
+
+                var serializedAlbumInfo = JsonConvert.SerializeObject(albumInfo, Formatting.Indented);
+                File.WriteAllText(albumInfoPath, serializedAlbumInfo);
+            }
+
 
             var filesInPath = Directory.GetFiles(savePath).Length;
             var pagesToIgnore = filesInPath / 40;

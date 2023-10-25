@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using GHent.Models;
@@ -37,16 +37,16 @@ namespace GHent.RequestProcessor
             try
             {
                 await _semaphore.WaitAsync(cancellationToken);
-                using var wc = new WebClient();
                 var extractDirectImgLink = await ExtractDirectImgLinkAsync(imageRequest.DownloadPath, cancellationToken)
                     .ConfigureAwait(false);
                 var imageName = extractDirectImgLink.Split('/').Last();
-                if (imageName == "509.gif")
+
+                if (WasTransferExceeded(imageName))
                 {
                     throw new TransferExceededException("Transfer was exceeded");
                 }
 
-                var fileName = Path.Combine(imageRequest.SavePath, imageName);
+                string fileName = GetFileName(imageRequest, imageName);
 
                 if (File.Exists(fileName))
                 {
@@ -54,14 +54,35 @@ namespace GHent.RequestProcessor
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                await wc.DownloadFileTaskAsync(extractDirectImgLink, fileName)
+                await SaveFileAsync(extractDirectImgLink, fileName, cancellationToken)
                     .ConfigureAwait(false);
+
                 return fileName;
             }
-            finally { 
-                _semaphore.Release(); 
+            finally
+            {
+                _semaphore.Release();
             }
+        }
 
+        private static string GetFileName(ImageRequest imageRequest, string imageName)
+        {
+            return Path.Combine(imageRequest.SavePath, imageName);
+        }
+
+        private static async Task SaveFileAsync(string extractDirectImgLink, string fileName, CancellationToken cancellationToken)
+        {
+            using var client = new HttpClient();
+            using var response = await client.GetAsync(extractDirectImgLink, cancellationToken);
+            using var content = response.Content;
+            await using var stream = await content.ReadAsStreamAsync(cancellationToken);
+            await using var fileStream = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
+            await stream.CopyToAsync(fileStream, cancellationToken);
+        }
+
+        private static bool WasTransferExceeded(string imageName)
+        {
+            return imageName == "509.gif";
         }
 
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>

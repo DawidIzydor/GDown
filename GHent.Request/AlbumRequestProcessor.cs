@@ -79,8 +79,10 @@ namespace GHent.RequestProcessor
             }
             else
             {
-                albumInfo = new AlbumInfo();
-                albumInfo.DownloadUrl = albumRequest.DownloadPath.AbsoluteUri;
+                albumInfo = new AlbumInfo
+                {
+                    DownloadUrl = albumRequest.DownloadPath.AbsoluteUri
+                };
 
                 var serializedAlbumInfo = JsonConvert.SerializeObject(albumInfo, Formatting.Indented);
                 File.WriteAllText(albumInfoPath, serializedAlbumInfo);

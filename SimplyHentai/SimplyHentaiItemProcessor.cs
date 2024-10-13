@@ -22,6 +22,11 @@ namespace Ghent.SimplyHentai
             var imageFileName = Path.GetFileName(imageUrl);
             var savePath = Path.Combine(request.SavePath, imageFileName);
 
+            if (File.Exists(savePath))
+            {
+                return savePath;
+            }
+
             await imageSaver.SaveImage(imageUrl, savePath, cancellationToken);
 
             return savePath;

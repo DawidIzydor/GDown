@@ -89,8 +89,8 @@ namespace GHent.App
             }
             finally
             {
-                DownloadButton.Visibility = Visibility.Visible;
-                CancelButton.Visibility = Visibility.Collapsed;
+                DownloadButton.SetCurrentValue(VisibilityProperty, Visibility.Visible);
+                CancelButton.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
                 Log("Finished");
             }
         }
@@ -105,14 +105,14 @@ namespace GHent.App
 
         private void ResetDownloadUiElements()
         {
-            ProgressBar.Value = 0;
-            DownloadButton.Visibility = Visibility.Collapsed;
-            CancelButton.Visibility = Visibility.Visible;
+            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, (double)0);
+            DownloadButton.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
+            CancelButton.SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }
 
         private void ProgressHandler(IProgressReporter<string> progress, string lastDone)
         {
-            ProgressBar.Value = progress.Done * 100.0f / progress.Total;
+            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, (double)progress.Done * 100.0f / progress.Total);
             Log($"Downloaded {lastDone}");
         }
 
@@ -121,7 +121,7 @@ namespace GHent.App
         {
             lock (logBlock)
             {
-                LogBlock.Text = $"{DateTime.Now:g} {str}{Environment.NewLine}{LogBlock.Text}";
+                LogBlock.SetCurrentValue(System.Windows.Controls.TextBlock.TextProperty, $"{DateTime.Now:g} {str}{Environment.NewLine}{LogBlock.Text}");
             }
         }
 

@@ -79,10 +79,7 @@ namespace GHent.GHentai
             }
         }
 
-        private static string GetFileName(IRequest imageRequest, string imageName)
-        {
-            return Path.Combine(imageRequest.SavePath, imageName);
-        }
+        private static string GetFileName(IRequest imageRequest, string imageName) => Path.Combine(imageRequest.SavePath, imageName);
 
         private static async Task SaveFileAsync(string extractDirectImgLink, string fileName, CancellationToken cancellationToken)
         {
@@ -94,10 +91,7 @@ namespace GHent.GHentai
             await stream.CopyToAsync(fileStream, cancellationToken);
         }
 
-        private static bool WasTransferExceeded(string imageName)
-        {
-            return imageName == "509.gif";
-        }
+        private static bool WasTransferExceeded(string imageName) => imageName == "509.gif";
 
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
         private async Task<string> ExtractDirectImgLinkAsync(Uri netPath, CancellationToken cancellationToken)

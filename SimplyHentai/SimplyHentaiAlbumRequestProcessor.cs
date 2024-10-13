@@ -7,8 +7,11 @@ using System.Xml.Linq;
 
 namespace Ghent.SimplyHentai
 {
-    public class SimplyHentaiAlbumRequestProcessor(IProgressReporter<string> progress, HtmlWeb htmlWeb) : IRequestProcessor
+    public class SimplyHentaiAlbumRequestProcessor(IProgressReporter<string> progress, HtmlWeb htmlWeb, IImageSaver imageSaver) : IRequestProcessor
     {
+        private const string ThumbnailNodesXPath = "//div[@class='thumbs']/div[@class='thumb-container']";
+        private const string AlbumTitleXPath = "//h1[@class='title']/span[@class='pretty']";
+        private const string AnchorNodeXPath = ".//a";
         private readonly Uri SimplyHentaiUrl = new("https://simplyhentai.org");
         public async Task<string> Download(IRequest request, CancellationToken cancellationToken)
         {
@@ -39,14 +42,14 @@ namespace Ghent.SimplyHentai
         {
             var alreadyDownloaded = FilesCount(savePath);
             var taskSet = new HashSet<Task<string>>();
-            var itemProcessor = new SimpleHentaiItemProcessor(htmlWeb);
+            var itemProcessor = new SimplyHentaiItemProcessor(htmlWeb, imageSaver);
             for (int fileIndex = alreadyDownloaded; fileIndex < thumbContainerNodes.Count; fileIndex++)
             {
                 var thumbContainerNode = thumbContainerNodes[fileIndex];
 
                 if (thumbContainerNode is null) continue;
 
-                var anchorNode = thumbContainerNode.SelectSingleNode(".//a");
+                var anchorNode = GetAnchorNode(thumbContainerNode);
                 if (anchorNode is null)
                 {
                     continue;
@@ -68,6 +71,11 @@ namespace Ghent.SimplyHentai
             return taskSet;
         }
 
+        private static HtmlNode GetAnchorNode(HtmlNode thumbContainerNode)
+        {
+            return thumbContainerNode.SelectSingleNode(AnchorNodeXPath);
+        }
+
         private static string GenerateSavePath(IRequest request, HtmlDocument document)
         {
             var albumTitle = GetAlbumTitle(document);
@@ -79,14 +87,11 @@ namespace Ghent.SimplyHentai
 
         private async Task<HtmlDocument> DownloadDocument(IRequest request, CancellationToken cancellationToken) => await htmlWeb.LoadFromWebAsync(request.DownloadPath.ToString(), cancellationToken);
 
-        private Uri GetDownloadPath(string href)
-        {
-            return new Uri(SimplyHentaiUrl, href);
-        }
+        private Uri GetDownloadPath(string href) => new(SimplyHentaiUrl, href);
 
         private static HtmlNodeCollection GetThumbnailNodes(HtmlDocument document, IRequest request)
         {
-            var thumbContainerNodes = document.DocumentNode.SelectNodes("//div[@class='thumbs']/div[@class='thumb-container']");
+            var thumbContainerNodes = document.DocumentNode.SelectNodes(ThumbnailNodesXPath);
             return thumbContainerNodes is null
                 ? throw new ArgumentNullException($"Thumb containers nodes null: {request.DownloadPath}")
                 : thumbContainerNodes;
@@ -104,11 +109,10 @@ namespace Ghent.SimplyHentai
 
         private static string GetAlbumTitle(HtmlDocument document)
         {
-            var nameNode = document.DocumentNode.SelectSingleNode("//h1[@class='title']/span[@class='pretty']");
+            var nameNode = document.DocumentNode.SelectSingleNode(AlbumTitleXPath);
             if (nameNode != null)
             {
                 return nameNode.InnerHtml.RemoveIllegalCharacters();
-                // Do something with the name
             }
             else
             {

@@ -21,6 +21,7 @@ namespace GHent.App
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly HtmlWeb _htmlWeb = new();
+        private readonly IImageSaver _imageSaver = new HttpClientImageSaver();
 
         public AlbumDownloadWindow()
         {
@@ -154,7 +155,10 @@ namespace GHent.App
 
             if(downloadUri.Host == "simplyhentai.org")
             {
-                var requestProcessor = new SimplyHentaiAlbumRequestProcessor(new ActionableProgressReporter<string>((IProgressReporter<string> progress, string lastDone) =>Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone)), _htmlWeb);
+                var requestProcessor = new SimplyHentaiAlbumRequestProcessor(
+                    new ActionableProgressReporter<string>((IProgressReporter<string> progress, string lastDone) =>Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone)),
+                    _htmlWeb,
+                    _imageSaver);
 
                 return await requestProcessor.Download(albumRequest, cancellationToken).ConfigureAwait(false);
             }
@@ -210,14 +214,8 @@ namespace GHent.App
         ///     An aggregate exception containing all the exceptions thrown by the
         ///     registered callbacks on the associated <see cref="T:System.Threading.CancellationToken" />.
         /// </exception>
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            _cancellationTokenSource.Cancel();
-        }
+        private void CancelButton_Click(object sender, RoutedEventArgs e) => _cancellationTokenSource.Cancel();
 
-        public void Dispose()
-        {
-            _cancellationTokenSource?.Dispose();
-        }
+        public void Dispose() => _cancellationTokenSource?.Dispose();
     }
 }

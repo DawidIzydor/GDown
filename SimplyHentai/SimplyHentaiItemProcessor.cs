@@ -8,8 +8,10 @@ using System.Threading.Tasks;
 
 namespace Ghent.SimplyHentai
 {
-    public class SimpleHentaiItemProcessor(HtmlWeb htmlWeb) : IRequestProcessor
+    public class SimplyHentaiItemProcessor(HtmlWeb htmlWeb, IImageSaver imageSaver) : IRequestProcessor
     {
+        private const string ImageXPath = "//section[@id='image-container']//a//img";
+
         public async Task<string> Download(IRequest request, CancellationToken cancellationToken)
         {
             HtmlDocument document = await DownloadDocument(request, cancellationToken);
@@ -20,20 +22,9 @@ namespace Ghent.SimplyHentai
             var imageFileName = Path.GetFileName(imageUrl);
             var savePath = Path.Combine(request.SavePath, imageFileName);
 
-            await SaveImage(imageUrl, savePath, cancellationToken);
+            await imageSaver.SaveImage(imageUrl, savePath, cancellationToken);
 
             return savePath;
-        }
-
-        private static async Task SaveImage(string imageUrl, string savePath, CancellationToken cancellationToken)
-        {
-            // Download the image
-            using var httpClient = new HttpClient();
-            using var response = await httpClient.GetAsync(imageUrl, cancellationToken);
-            response.EnsureSuccessStatusCode();
-            var imageBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-
-            await File.WriteAllBytesAsync(savePath, imageBytes, cancellationToken);
         }
 
         private Task<HtmlDocument> DownloadDocument(IRequest request, CancellationToken cancellationToken) => htmlWeb.LoadFromWebAsync(request.DownloadPath.ToString(), cancellationToken);
@@ -55,7 +46,7 @@ namespace Ghent.SimplyHentai
         private static HtmlNode GetImageNode(IRequest request, HtmlDocument document)
         {
             // Get the image node
-            var imageNode = document.DocumentNode.SelectSingleNode("//section[@id='image-container']//a//img");
+            var imageNode = document.DocumentNode.SelectSingleNode(ImageXPath);
             return imageNode is null ? throw new ArgumentNullException($"Image node not found: {request.DownloadPath}") : imageNode;
         }
     }

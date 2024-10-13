@@ -110,10 +110,7 @@ namespace GHent.GHentai
             return savePath;
         }
 
-        private static string GetAlbumName(HtmlDocument document)
-        {
-            return document.GetElementbyId("gn").InnerHtml.RemoveIllegalCharacters();
-        }
+        private static string GetAlbumName(HtmlDocument document) => document.GetElementbyId("gn").InnerHtml.RemoveIllegalCharacters();
 
         private static void EnsurePathExists(string savePath)
         {

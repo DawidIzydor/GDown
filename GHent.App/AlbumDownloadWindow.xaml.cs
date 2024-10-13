@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 using System.Windows;
 using GHent.Models;
 using GHent.RequestProcessor;
+using Newtonsoft.Json.Bson;
 
 namespace GHent.App
 {
     /// <summary>
     ///     Interaction logic for AlbumDownloadWindow.xaml
     /// </summary>
-    public partial class AlbumDownloadWindow
+    public sealed partial class AlbumDownloadWindow : IDisposable
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
@@ -114,9 +115,10 @@ namespace GHent.App
             Log($"Downloaded {report.FinishedPath}");
         }
 
+        private readonly object logBlock = new object();
         private void Log(string str)
         {
-            lock (LogBlock)
+            lock (logBlock)
             {
                 LogBlock.Text = $"{DateTime.Now:g} {str}{Environment.NewLine}{LogBlock.Text}";
             }
@@ -194,6 +196,7 @@ namespace GHent.App
 
         private void BrowseSavePathButton_Click(object sender, RoutedEventArgs e)
         {
+            throw new NotSupportedException("Not implemented yet.");
         }
 
         /// <exception cref="T:System.AggregateException">
@@ -203,6 +206,11 @@ namespace GHent.App
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             _cancellationTokenSource.Cancel();
+        }
+
+        public void Dispose()
+        {
+            _cancellationTokenSource?.Dispose();
         }
     }
 }

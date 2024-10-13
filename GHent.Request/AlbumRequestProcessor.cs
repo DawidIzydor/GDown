@@ -74,8 +74,8 @@ namespace GHent.RequestProcessor
             AlbumInfo albumInfo;
             if (File.Exists(albumInfoPath))
             {
-                var albumInfoJson = File.ReadAllText(albumInfoPath);
-                albumInfo = JsonConvert.DeserializeObject<AlbumInfo>(albumInfoJson);
+                //var albumInfoJson = await File.ReadAllTextAsync(albumInfoPath);
+                //albumInfo = JsonConvert.DeserializeObject<AlbumInfo>(albumInfoJson);
             }
             else
             {
@@ -85,7 +85,7 @@ namespace GHent.RequestProcessor
                 };
 
                 var serializedAlbumInfo = JsonConvert.SerializeObject(albumInfo, Formatting.Indented);
-                File.WriteAllText(albumInfoPath, serializedAlbumInfo);
+                await File.WriteAllTextAsync(albumInfoPath, serializedAlbumInfo);
             }
 
 

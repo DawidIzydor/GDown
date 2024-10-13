@@ -27,7 +27,7 @@ namespace GHent.App
             {
                 var dirName = dir.Split("\\").Last();
                 var cbrPath = $"{Path.Combine(path, dirName)}.cbr";
-                if (regenerate == false && File.Exists(cbrPath))
+                if (!regenerate && File.Exists(cbrPath))
                 {
                     continue;
                 }

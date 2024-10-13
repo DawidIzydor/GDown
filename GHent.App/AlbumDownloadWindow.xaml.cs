@@ -8,6 +8,7 @@ using System.Windows;
 using GHent.GHentai;
 using GHent.Models;
 using Ghent.SimplyHentai;
+using HtmlAgilityPack;
 
 namespace GHent.App
 {
@@ -17,6 +18,7 @@ namespace GHent.App
     public sealed partial class AlbumDownloadWindow : IDisposable
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private HtmlWeb _htmlWeb = new HtmlWeb();
 
         public AlbumDownloadWindow()
         {
@@ -145,21 +147,21 @@ namespace GHent.App
         {
             SaveLastUsedPaths(downloadUri, savePath);
 
-            var albumRequest = new AlbumRequest
+            var albumRequest = new Request
             {
                 DownloadPath = downloadUri,
                 SavePath = savePath
             };
 
-            if(downloadUri.Host == "simplyhentai")
+            if(downloadUri.Host == "simplyhentai.org")
             {
-                var requestProcessor = new SimpleHentaiAlbumRequestProcessor(progress);
+                var requestProcessor = new SimplyHentaiAlbumRequestProcessor(progress, _htmlWeb);
 
                 return await requestProcessor.Download(albumRequest, cancellationToken).ConfigureAwait(false);
             }
             else
             {
-                var requestProcessor = new GHentaiAlbumRequestProcessor(progress);
+                var requestProcessor = new GHentaiAlbumRequestProcessor(progress, _htmlWeb);
 
                 return await requestProcessor.Download(albumRequest, cancellationToken)
                     .ConfigureAwait(false);

@@ -32,7 +32,7 @@ namespace GHent.GHentai
         ///     <paramref>path1</paramref> or <paramref>path2</paramref> contains one or
         ///     more of the invalid characters defined in <see cref="M:System.IO.Path.GetInvalidPathChars"></see>.
         /// </exception>
-        public static async Task<string> DownloadAsync(ImageRequest imageRequest, CancellationToken cancellationToken)
+        public static async Task<string> DownloadAsync(IRequest imageRequest, CancellationToken cancellationToken)
         {
             try
             {
@@ -65,7 +65,7 @@ namespace GHent.GHentai
             }
         }
 
-        private static string GetFileName(ImageRequest imageRequest, string imageName)
+        private static string GetFileName(IRequest imageRequest, string imageName)
         {
             return Path.Combine(imageRequest.SavePath, imageName);
         }

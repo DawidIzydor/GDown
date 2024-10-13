@@ -15,7 +15,7 @@ namespace GHent.GHentai
     {
         public string DownloadUrl { get; set; }
     }
-    public class GHentaiAlbumRequestProcessor(IProgress<DownloadProgressReport> progress) : IRequestProcessor
+    public class GHentaiAlbumRequestProcessor(IProgress<DownloadProgressReport> progress, HtmlWeb htmlWeb) : IRequestProcessor
     {
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
         /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
@@ -56,17 +56,14 @@ namespace GHent.GHentai
         {
             var albumRequestSavePath = albumRequest.SavePath;
             var netPath = albumRequest.DownloadPath;
-            var document = await HtmlWebSingleton.Instance.LoadFromWebAsync(netPath.ToString(), cancellationToken)
+            var document = await htmlWeb.LoadFromWebAsync(netPath.ToString(), cancellationToken)
                 .ConfigureAwait(false);
             var pages = ParsePagesCount(document);
 
-            var name = document.GetElementbyId("gn").InnerHtml.RemoveIllegalCharacters();
+            var name = GetAlbumName(document);
 
             var savePath = Path.Combine(albumRequestSavePath, name);
-            if (!Directory.Exists(savePath))
-            {
-                Directory.CreateDirectory(savePath);
-            }
+            EnsurePathExists(savePath);
 
             string albumInfoPath = Path.Combine(savePath, "albuminfo.json");
             AlbumInfo albumInfo;
@@ -124,6 +121,19 @@ namespace GHent.GHentai
             return savePath;
         }
 
+        private static string GetAlbumName(HtmlDocument document)
+        {
+            return document.GetElementbyId("gn").InnerHtml.RemoveIllegalCharacters();
+        }
+
+        private static void EnsurePathExists(string savePath)
+        {
+            if (!Directory.Exists(savePath))
+            {
+                Directory.CreateDirectory(savePath);
+            }
+        }
+
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
         /// <exception cref="T:GHent.RequestProcessor.TransferExceededException">Transfer was exceeded</exception>
         /// <exception cref="T:System.InvalidOperationException">The local file specified by fileName is in use by another thread.</exception>
@@ -141,7 +151,7 @@ namespace GHent.GHentai
         {
             var selectSingleNode = el.SelectSingleNode("div//a");
             var uriString = selectSingleNode.Attributes["href"].Value;
-            return ImageRequestProcessor.DownloadAsync(new ImageRequest
+            return ImageRequestProcessor.DownloadAsync(new Request
             {
                 DownloadPath = new Uri(uriString),
                 SavePath = savePath

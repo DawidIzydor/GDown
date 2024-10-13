@@ -4,20 +4,10 @@ namespace GHent.Models
 {
     public static class StringHelper
     {
-        // TODO: replace with Regex
+        private readonly static Regex rgx = new Regex("[/\\\\*?\"<>|]");
         public static string RemoveIllegalCharacters(this string str)
         {
-            string ret = str;
-            ret = ret.Replace(':', '_');
-            ret = ret.Replace('/', '_');
-            ret = ret.Replace('\\', '_');
-            ret = ret.Replace('*', '_');
-            ret = ret.Replace('?', '_');
-            ret = ret.Replace('"', '_');
-            ret = ret.Replace('<', '_');
-            ret = ret.Replace('>', '_');
-            ret = ret.Replace('|', '_');
-            return ret;
+            return rgx.Replace(str, "_");
         }
     }
 }

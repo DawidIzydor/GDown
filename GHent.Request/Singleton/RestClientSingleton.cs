@@ -1,6 +1,6 @@
 ﻿using RestSharp;
 
-namespace GHent.RequestProcessor.Singleton
+namespace GHent.GHentai.Singleton
 {
     internal static class RestClientSingleton
     {

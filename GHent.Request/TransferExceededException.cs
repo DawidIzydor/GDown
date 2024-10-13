@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GHent.RequestProcessor
+namespace GHent.GHentai
 {
     /// <inheritdoc />
     public class TransferExceededException : Exception

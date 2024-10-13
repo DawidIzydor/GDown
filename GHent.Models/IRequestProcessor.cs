@@ -1,9 +1,8 @@
-﻿using GHent.Models;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GHent.RequestProcessor
+namespace GHent.Models
 {
     public interface IRequestProcessor
     {

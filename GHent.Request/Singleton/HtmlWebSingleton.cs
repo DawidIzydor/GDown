@@ -1,6 +1,6 @@
 ﻿using HtmlAgilityPack;
 
-namespace GHent.RequestProcessor.Singleton
+namespace GHent.GHentai.Singleton
 {
     internal static class HtmlWebSingleton
     {

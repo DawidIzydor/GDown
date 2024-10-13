@@ -1,4 +1,4 @@
-﻿namespace GHent.RequestProcessor
+﻿namespace GHent.GHentai
 {
     public static class StringHelper
     {

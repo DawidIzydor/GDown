@@ -4,18 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using GHent.GHentai.Singleton;
 using GHent.Models;
-using GHent.RequestProcessor.Singleton;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 
-namespace GHent.RequestProcessor
+namespace GHent.GHentai
 {
     class AlbumInfo
     {
-        public string DownloadUrl { get; set;}
+        public string DownloadUrl { get; set; }
     }
-    public class AlbumRequestProcessor(IProgress<DownloadProgressReport> progress) : IRequestProcessor
+    public class GHentaiAlbumRequestProcessor(IProgress<DownloadProgressReport> progress) : IRequestProcessor
     {
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
         /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>

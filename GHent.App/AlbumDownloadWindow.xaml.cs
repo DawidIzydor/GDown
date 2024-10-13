@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using GHent.GHentai;
 using GHent.Models;
-using GHent.RequestProcessor;
-using Newtonsoft.Json.Bson;
+using Ghent.SimplyHentai;
 
 namespace GHent.App
 {
@@ -151,10 +151,19 @@ namespace GHent.App
                 SavePath = savePath
             };
 
-            var requestProcessor = new AlbumRequestProcessor(progress);
+            if(downloadUri.Host == "simplyhentai")
+            {
+                var requestProcessor = new SimpleHentaiAlbumRequestProcessor(progress);
 
-            return await requestProcessor.Download(albumRequest, cancellationToken)
-                .ConfigureAwait(false);
+                return await requestProcessor.Download(albumRequest, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                var requestProcessor = new GHentaiAlbumRequestProcessor(progress);
+
+                return await requestProcessor.Download(albumRequest, cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
 
         /// <exception cref="T:System.IO.IOException">

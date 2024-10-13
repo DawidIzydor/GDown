@@ -4,10 +4,10 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using GHent.GHentai.Singleton;
 using GHent.Models;
-using GHent.RequestProcessor.Singleton;
 
-namespace GHent.RequestProcessor
+namespace GHent.GHentai
 {
     public static class ImageRequestProcessor
     {

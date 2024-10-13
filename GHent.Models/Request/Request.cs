@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GHent.Models
+namespace GHent.Shared.Request
 {
     public record Request : IRequest
     {

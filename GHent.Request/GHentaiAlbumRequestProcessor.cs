@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using GHent.GHentai.Singleton;
 using GHent.Models;
+using GHent.Shared.ProgressReporter;
+using GHent.Shared.Request;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 
@@ -15,7 +17,7 @@ namespace GHent.GHentai
     {
         public string DownloadUrl { get; set; }
     }
-    public class GHentaiAlbumRequestProcessor(IProgress<DownloadProgressReport> progress, HtmlWeb htmlWeb) : IRequestProcessor
+    public class GHentaiAlbumRequestProcessor(IProgressReporter<string> progress, HtmlWeb htmlWeb) : IRequestProcessor
     {
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
         /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
@@ -67,12 +69,7 @@ namespace GHent.GHentai
 
             string albumInfoPath = Path.Combine(savePath, "albuminfo.json");
             AlbumInfo albumInfo;
-            if (File.Exists(albumInfoPath))
-            {
-                //var albumInfoJson = await File.ReadAllTextAsync(albumInfoPath);
-                //albumInfo = JsonConvert.DeserializeObject<AlbumInfo>(albumInfoJson);
-            }
-            else
+            if (!File.Exists(albumInfoPath))
             {
                 albumInfo = new AlbumInfo
                 {
@@ -80,42 +77,34 @@ namespace GHent.GHentai
                 };
 
                 var serializedAlbumInfo = JsonConvert.SerializeObject(albumInfo, Formatting.Indented);
-                await File.WriteAllTextAsync(albumInfoPath, serializedAlbumInfo);
+                await File.WriteAllTextAsync(albumInfoPath, serializedAlbumInfo, cancellationToken);
             }
 
 
             var filesInPath = Directory.GetFiles(savePath).Length;
             var pagesToIgnore = filesInPath / 40;
-            //var filesToIgnore = filesInPath - pagesToIgnore * 40;
 
             var tasks = new List<Task<string>>();
             for (var page = pagesToIgnore; page < pages; page++)
             {
-                var htmlDocument = await HtmlWebSingleton.Instance
-                    .LoadFromWebAsync(netPath + "?p=" + page, cancellationToken).ConfigureAwait(false);
+                var htmlDocument = await htmlWeb.LoadFromWebAsync(netPath + "?p=" + page, cancellationToken).ConfigureAwait(false);
                 var gdt = htmlDocument.GetElementbyId("gdt");
 
                 // ReSharper disable once StringLiteralTypo
                 tasks.AddRange(gdt.ChildNodes.Where(gdtChild => gdtChild.HasClass("gdtm"))
-                    .Select(el => StartDownloadingAsync(cancellationToken, el, savePath)));
+                    .Select(el => StartDownloadingAsync(el, savePath, cancellationToken)));
             }
 
-            var report = new DownloadProgressReport
-            {
-                All = tasks.Count,
-                Finished = 0
-            };
-            while (tasks.Any())
+
+            progress.Reset(tasks.Count);
+         
+            while (tasks.Count != 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var finishedTask = await Task.WhenAny(tasks).ConfigureAwait(false);
                 tasks.Remove(finishedTask);
 
-                // ReSharper disable once AsyncConverter.AsyncWait
-                // ReSharper disable once ExceptionNotDocumented
-                report.FinishedPath = finishedTask.Result;
-                report.Finished++;
-                progress?.Report(report);
+                progress.Report(await finishedTask);
             }
 
             return savePath;
@@ -146,12 +135,13 @@ namespace GHent.GHentai
         ///     <see cref="T:System.Threading.CancellationTokenSource"></see> has been disposed.</exception>
         /// <exception cref="T:System.ArgumentException"><paramref>path1</paramref> or <paramref>path2</paramref> contains one or
         ///     more of the invalid characters defined in <see cref="M:System.IO.Path.GetInvalidPathChars"></see>.</exception>
-        private static Task<string> StartDownloadingAsync(CancellationToken cancellationToken, HtmlNode el,
-            string savePath)
+        private Task<string> StartDownloadingAsync(HtmlNode el, string savePath,
+            CancellationToken cancellationToken)
         {
             var selectSingleNode = el.SelectSingleNode("div//a");
             var uriString = selectSingleNode.Attributes["href"].Value;
-            return ImageRequestProcessor.DownloadAsync(new Request
+            var processor = new ImageRequestProcessor(htmlWeb);
+            return processor.DownloadAsync(new Request
             {
                 DownloadPath = new Uri(uriString),
                 SavePath = savePath
@@ -168,7 +158,7 @@ namespace GHent.GHentai
         {
             var pagesTrNode = document.DocumentNode.ChildNodes[2].ChildNodes[3]
                 .SelectSingleNode("div[4]//table[1]//tr[1]");
-            var lastPageTdNode = pagesTrNode.ChildNodes[pagesTrNode.ChildNodes.Count - 2];
+            var lastPageTdNode = pagesTrNode.ChildNodes[^2];
             var pages = int.Parse(lastPageTdNode.InnerText);
             return pages;
         }

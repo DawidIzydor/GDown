@@ -5,13 +5,14 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using GHent.GHentai.Singleton;
-using GHent.Models;
+using GHent.Shared.Request;
+using HtmlAgilityPack;
 
 namespace GHent.GHentai
 {
-    public static class ImageRequestProcessor
+    public class ImageRequestProcessor(HtmlWeb htmlWeb)
     {
-        private static SemaphoreSlim _semaphore = new SemaphoreSlim(5);
+        private readonly static SemaphoreSlim _semaphore = new(5);
         /// <exception cref="T:System.InvalidOperationException">The local file specified by fileName is in use by another thread.</exception>
         /// <exception cref="T:System.Net.WebException">
         ///     The URI formed by combining
@@ -32,14 +33,14 @@ namespace GHent.GHentai
         ///     <paramref>path1</paramref> or <paramref>path2</paramref> contains one or
         ///     more of the invalid characters defined in <see cref="M:System.IO.Path.GetInvalidPathChars"></see>.
         /// </exception>
-        public static async Task<string> DownloadAsync(IRequest imageRequest, CancellationToken cancellationToken)
+        public async Task<string> DownloadAsync(IRequest imageRequest, CancellationToken cancellationToken)
         {
             try
             {
                 await _semaphore.WaitAsync(cancellationToken);
                 var extractDirectImgLink = await ExtractDirectImgLinkAsync(imageRequest.DownloadPath, cancellationToken)
                     .ConfigureAwait(false);
-                var imageName = extractDirectImgLink.Split('/').Last();
+                var imageName = GetImageName(extractDirectImgLink);
 
                 if (WasTransferExceeded(imageName))
                 {
@@ -65,6 +66,19 @@ namespace GHent.GHentai
             }
         }
 
+        private static string GetImageName(string extractDirectImgLink)
+        {
+            var index = extractDirectImgLink.IndexOf('/');
+            if(index > 0)
+            {
+                return extractDirectImgLink.Substring(index+1);
+            }
+            else
+            {
+                return extractDirectImgLink;
+            }
+        }
+
         private static string GetFileName(IRequest imageRequest, string imageName)
         {
             return Path.Combine(imageRequest.SavePath, imageName);
@@ -86,21 +100,20 @@ namespace GHent.GHentai
         }
 
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
-        private static async Task<string> ExtractDirectImgLinkAsync(Uri netPath, CancellationToken cancellationToken)
+        private async Task<string> ExtractDirectImgLinkAsync(Uri netPath, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var extractedNl = await ExtractNlUrlAsync(netPath, cancellationToken).ConfigureAwait(false);
-            var a = (await HtmlWebSingleton.Instance
-                .LoadFromWebAsync(netPath + "?nl=" + extractedNl, cancellationToken)
+            var a = (await htmlWeb.LoadFromWebAsync(netPath + "?nl=" + extractedNl, cancellationToken)
                 .ConfigureAwait(false)).GetElementbyId("i3");
             return a.SelectSingleNode(a.XPath + "//a//img").Attributes["src"].Value;
         }
 
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
-        private static async Task<string> ExtractNlUrlAsync(Uri netPath, CancellationToken cancellationToken)
+        private async Task<string> ExtractNlUrlAsync(Uri netPath, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var nl = (await HtmlWebSingleton.Instance.LoadFromWebAsync(netPath.ToString(), cancellationToken)
+            var nl = (await htmlWeb.LoadFromWebAsync(netPath.ToString(), cancellationToken)
                     .ConfigureAwait(false))
                 // ReSharper disable once StringLiteralTypo
                 .GetElementbyId("loadfail");

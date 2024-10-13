@@ -9,6 +9,8 @@ using GHent.GHentai;
 using GHent.Models;
 using Ghent.SimplyHentai;
 using HtmlAgilityPack;
+using GHent.Shared.ProgressReporter;
+using GHent.Shared.Request;
 
 namespace GHent.App
 {
@@ -17,8 +19,8 @@ namespace GHent.App
     /// </summary>
     public sealed partial class AlbumDownloadWindow : IDisposable
     {
-        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-        private HtmlWeb _htmlWeb = new HtmlWeb();
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
+        private readonly HtmlWeb _htmlWeb = new();
 
         public AlbumDownloadWindow()
         {
@@ -56,7 +58,7 @@ namespace GHent.App
 
                 VerifyDirectoryExists(savePath);
 
-                var directoryPath = await DownloadAsync(new Progress<DownloadProgressReport>(ProgressHandler), savePath, downloadUri,
+                var directoryPath = await DownloadAsync(savePath, downloadUri,
                     _cancellationTokenSource.Token).ConfigureAwait(true);
 
                 var saveCbr = saveCbrCheckbox.IsChecked ?? false;
@@ -75,14 +77,11 @@ namespace GHent.App
             catch (TransferExceededException ex)
             {
                 MessageBox.Show(ex.Message);
-                _cancellationTokenSource.Cancel();
+                await _cancellationTokenSource.CancelAsync();
             }
             catch (UriFormatException)
             {
                 MessageBox.Show("Wrong url format!");
-            }
-            catch (DirectoryNotFoundException)
-            {
             }
             catch (Exception ex)
             {
@@ -99,7 +98,7 @@ namespace GHent.App
         private static string GetCbrFileName(string savePathText, string directoryPath)
         {
             var dirSplit = directoryPath.Split('\\');
-            var filename = dirSplit[dirSplit.Length - 1] != "" ? dirSplit[dirSplit.Length - 1] : dirSplit[dirSplit.Length - 2];
+            var filename = dirSplit[^1] != "" ? dirSplit[^1] : dirSplit[^2];
             var cbrFileName = Path.Combine(savePathText, filename) + ".cbr";
             return cbrFileName;
         }
@@ -111,13 +110,13 @@ namespace GHent.App
             CancelButton.Visibility = Visibility.Visible;
         }
 
-        private void ProgressHandler(DownloadProgressReport report)
+        private void ProgressHandler(IProgressReporter<string> progress, string lastDone)
         {
-            ProgressBar.Value = report.All * 100.0f / report.Finished;
-            Log($"Downloaded {report.FinishedPath}");
+            ProgressBar.Value = progress.Done * 100.0f / progress.Total;
+            Log($"Downloaded {lastDone}");
         }
 
-        private readonly object logBlock = new object();
+        private readonly object logBlock = new();
         private void Log(string str)
         {
             lock (logBlock)
@@ -142,7 +141,7 @@ namespace GHent.App
         /// </exception>
         /// <exception cref="T:GHent.RequestProcessor.TransferExceededException">Transfer was exceeded</exception>
         /// <exception cref="T:System.AggregateException"></exception>
-        private async Task<string> DownloadAsync(IProgress<DownloadProgressReport> progress, string savePath, Uri downloadUri,
+        private async Task<string> DownloadAsync(string savePath, Uri downloadUri,
             CancellationToken cancellationToken)
         {
             SaveLastUsedPaths(downloadUri, savePath);
@@ -155,13 +154,13 @@ namespace GHent.App
 
             if(downloadUri.Host == "simplyhentai.org")
             {
-                var requestProcessor = new SimplyHentaiAlbumRequestProcessor(progress, _htmlWeb);
+                var requestProcessor = new SimplyHentaiAlbumRequestProcessor(new ActionableProgressReporter<string>((IProgressReporter<string> progress, string lastDone) =>Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone)), _htmlWeb);
 
                 return await requestProcessor.Download(albumRequest, cancellationToken).ConfigureAwait(false);
             }
             else
             {
-                var requestProcessor = new GHentaiAlbumRequestProcessor(progress, _htmlWeb);
+                var requestProcessor = new GHentaiAlbumRequestProcessor(new ActionableProgressReporter<string>((IProgressReporter<string> progress, string lastDone) => Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone)), _htmlWeb);
 
                 return await requestProcessor.Download(albumRequest, cancellationToken)
                     .ConfigureAwait(false);
@@ -179,11 +178,11 @@ namespace GHent.App
         ///     unmapped drive).
         /// </exception>
         /// <exception cref="T:System.ArgumentOutOfRangeException">MessageBox result not found</exception>
-        private static bool VerifyDirectoryExists(string savePath)
+        private static void VerifyDirectoryExists(string savePath)
         {
             if (Directory.Exists(savePath))
             {
-                return true;
+                return;
             }
 
             var result = MessageBox.Show("Save directory does not exist, create it?", "Question",
@@ -192,11 +191,11 @@ namespace GHent.App
             {
                 case MessageBoxResult.Yes:
                     Directory.CreateDirectory(savePath);
-                    return true;
+                    return;
                 case MessageBoxResult.No:
                     throw new DirectoryNotFoundException();
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(result), "MessageBox result not found");
+                    throw new InvalidOperationException($"Result not found: {result}");
             }
         }
 
@@ -205,11 +204,6 @@ namespace GHent.App
             AppSettings.Default.LastDownloadPath = downloadUri.ToString();
             AppSettings.Default.LastSavePath = savePath;
             AppSettings.Default.Save();
-        }
-
-        private void BrowseSavePathButton_Click(object sender, RoutedEventArgs e)
-        {
-            throw new NotSupportedException("Not implemented yet.");
         }
 
         /// <exception cref="T:System.AggregateException">

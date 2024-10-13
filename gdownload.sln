@@ -5,11 +5,11 @@ VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GHent.App", "GHent.App\GHent.App.csproj", "{C863B741-F81F-4390-83C6-7EF9925033AA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GHent.Models", "GHent.Models\GHent.Models.csproj", "{6D733DF5-0D8C-4308-AAB4-E33398D7E866}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GHent.Shared", "GHent.Models\GHent.Shared.csproj", "{6D733DF5-0D8C-4308-AAB4-E33398D7E866}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GHent.GHentai", "GHent.Request\GHent.GHentai.csproj", "{15153717-A2AB-4B5D-855D-1ABCA9BE97B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ghent.SimplyHentai", "SimplyHentai\Ghent.SimplyHentai.csproj", "{C1210B8B-229A-4FE4-AF22-756EC2739AE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ghent.SimplyHentai", "SimplyHentai\Ghent.SimplyHentai.csproj", "{C1210B8B-229A-4FE4-AF22-756EC2739AE4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Processors", "Processors", "{7BA221F2-A996-48E2-B01F-C5402ACF150B}"
 EndProject

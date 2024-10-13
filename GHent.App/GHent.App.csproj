@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GHent.Models\GHent.Models.csproj" />
+    <ProjectReference Include="..\GHent.Models\GHent.Shared.csproj" />
     <ProjectReference Include="..\GHent.Request\GHent.GHentai.csproj" />
     <ProjectReference Include="..\SimplyHentai\Ghent.SimplyHentai.csproj" />
   </ItemGroup>

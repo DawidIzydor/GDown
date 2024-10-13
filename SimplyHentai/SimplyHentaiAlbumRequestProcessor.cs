@@ -1,36 +1,44 @@
 ﻿using GHent.Models;
+using GHent.Shared.ProgressReporter;
+using GHent.Shared.Request;
 using HtmlAgilityPack;
 using System.Xml.Linq;
 
 
 namespace Ghent.SimplyHentai
 {
-    public class SimplyHentaiAlbumRequestProcessor(IProgress<DownloadProgressReport> progress, HtmlWeb htmlWeb) : IRequestProcessor
+    public class SimplyHentaiAlbumRequestProcessor(IProgressReporter<string> progress, HtmlWeb htmlWeb) : IRequestProcessor
     {
-        private const string SimplyHentaiUrl = "simplyhentai.org";
+        private readonly Uri SimplyHentaiUrl = new("https://simplyhentai.org");
         public async Task<string> Download(IRequest request, CancellationToken cancellationToken)
         {
-            var albumRequestSavePath = request.SavePath;
-            var document = await htmlWeb.LoadFromWebAsync(request.DownloadPath.ToString(), cancellationToken)
-                .ConfigureAwait(false);
-            //var pages = ParsePagesCount(document);
+            HtmlDocument document = await DownloadDocument(request, cancellationToken);
+            string savePath = GenerateSavePath(request, document);
+            var thumbContainerNodes = GetThumbnailNodes(document, request);
 
-            var albumTitle = GetAlbumTitle(document);
+            HashSet<Task<string>> taskSet = StartDownloadTasks(thumbContainerNodes, savePath, cancellationToken);
 
-            var savePath = Path.Combine(albumRequestSavePath, albumTitle);
-            EnsurePathExists(savePath);
+            await ProgressAllTasks(taskSet, progress).ConfigureAwait(false);
 
-            var alreadyDownloaded = FilesCount(savePath);
+            return savePath;
+        }
 
-            var thumbContainerNodes = GetThumbnailNodes(document);
-
-            var taskSet = new HashSet<Task<string>>();
-
-            if (thumbContainerNodes == null)
+        private static async Task ProgressAllTasks(HashSet<Task<string>> taskSet, IProgressReporter<string> progress)
+        {
+            progress.Reset(taskSet.Count);
+            while (taskSet.Count > 0)
             {
-                throw new InvalidOperationException("Thumb containers nodes null");
+                var task = await Task.WhenAny(taskSet).ConfigureAwait(false);
+                taskSet.Remove(task);
+
+                progress.Report(await task);
             }
-            
+        }
+
+        private HashSet<Task<string>> StartDownloadTasks(HtmlNodeCollection thumbContainerNodes, string savePath, CancellationToken cancellationToken)
+        {
+            var alreadyDownloaded = FilesCount(savePath);
+            var taskSet = new HashSet<Task<string>>();
             var itemProcessor = new SimpleHentaiItemProcessor(htmlWeb);
             for (int fileIndex = alreadyDownloaded; fileIndex < thumbContainerNodes.Count; fileIndex++)
             {
@@ -50,34 +58,39 @@ namespace Ghent.SimplyHentai
                 {
                     var itemRequest = new Request
                     {
-                        DownloadPath = new Uri($"https://{SimplyHentaiUrl}{href}"),
+                        DownloadPath = GetDownloadPath(href),
                         SavePath = savePath,
                     };
                     taskSet.Add(itemProcessor.Download(itemRequest, cancellationToken));
                 }
             }
 
-            var progressReport = new DownloadProgressReport
-            {
-                All = taskSet.Count
-            };
-            while(taskSet.Count > 0)
-            {
-                var task = await Task.WhenAny(taskSet).ConfigureAwait(false);
-                taskSet.Remove(task);
+            return taskSet;
+        }
 
-                progressReport.Finished++;
-                progressReport.FinishedPath = await task;
-
-                progress.Report(progressReport);
-
-            }
-
-
+        private static string GenerateSavePath(IRequest request, HtmlDocument document)
+        {
+            var albumTitle = GetAlbumTitle(document);
+            var albumRequestSavePath = request.SavePath;
+            var savePath = Path.Combine(albumRequestSavePath, albumTitle);
+            EnsurePathExists(savePath);
             return savePath;
         }
 
-        private static HtmlNodeCollection GetThumbnailNodes(HtmlDocument document) => document.DocumentNode.SelectNodes("//div[@class='thumbs']/div[@class='thumb-container']");
+        private async Task<HtmlDocument> DownloadDocument(IRequest request, CancellationToken cancellationToken) => await htmlWeb.LoadFromWebAsync(request.DownloadPath.ToString(), cancellationToken);
+
+        private Uri GetDownloadPath(string href)
+        {
+            return new Uri(SimplyHentaiUrl, href);
+        }
+
+        private static HtmlNodeCollection GetThumbnailNodes(HtmlDocument document, IRequest request)
+        {
+            var thumbContainerNodes = document.DocumentNode.SelectNodes("//div[@class='thumbs']/div[@class='thumb-container']");
+            return thumbContainerNodes is null
+                ? throw new ArgumentNullException($"Thumb containers nodes null: {request.DownloadPath}")
+                : thumbContainerNodes;
+        }
 
         private static int FilesCount(string savePath) => Directory.GetFiles(savePath).Length;
 

@@ -15,7 +15,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <TextBox x:Name="SavePath" Grid.Column="0" Text="" />
-            <Button x:Name="BrowseSavePathButton" Content="Browse" Grid.Column="1" Click="BrowseSavePathButton_Click"
+            <Button x:Name="BrowseSavePathButton" Content="Browse" Grid.Column="1" 
                     IsEnabled="False" />
         </Grid>
         <CheckBox x:Name="saveCbrCheckbox" Content="Create CBR" IsChecked="True"></CheckBox>

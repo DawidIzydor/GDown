@@ -72,9 +72,9 @@ namespace Ghent.SimplyHentai
                 progress.Report(progressReport);
 
             }
-            
 
-            throw new NotImplementedException();
+
+            return savePath;
         }
 
         private static HtmlNodeCollection GetThumbnailNodes(HtmlDocument document) => document.DocumentNode.SelectNodes("//div[@class='thumbs']/div[@class='thumb-container']");

@@ -153,7 +153,7 @@ namespace GHent.App
                 SavePath = savePath
             };
 
-            if(downloadUri.Host == "simplyhentai.org")
+            if(downloadUri.Host == "simplyhentai.org" || downloadUri.Host == "nhentai.net")
             {
                 var requestProcessor = new SimplyHentaiAlbumRequestProcessor(
                     new ActionableProgressReporter<string>((IProgressReporter<string> progress, string lastDone) =>Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone)),

@@ -15,7 +15,7 @@ namespace GHent.RequestProcessor
     {
         public string DownloadUrl { get; set;}
     }
-    public static class AlbumRequestProcessor
+    public class AlbumRequestProcessor(IProgress<DownloadProgressReport> progress) : IRequestProcessor
     {
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
         /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
@@ -26,12 +26,11 @@ namespace GHent.RequestProcessor
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
         /// <exception cref="T:System.AggregateException"></exception>
         /// <exception cref="TransferExceededException">Transfer exceeded</exception>
-        public static Task<string> DownloadAsync(Request albumRequest, IProgress<DownloadProgressReport> progress,
-            CancellationToken cancellationToken)
+        public Task<string> Download(IRequest request, CancellationToken cancellationToken)
         {
             try
             {
-                return DownloadInternalAsync(albumRequest, progress, cancellationToken);
+                return DownloadInternalAsync(request, cancellationToken);
             }
             catch (AggregateException ex)
             {
@@ -53,8 +52,7 @@ namespace GHent.RequestProcessor
         /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
         /// <exception cref="T:System.AggregateException">The task was canceled. The <see cref="P:System.AggregateException.InnerExceptions"></see> collection contains a <see cref="T:System.Threading.Tasks.TaskCanceledException"></see> object.   -or-   An exception was thrown during the execution of the task. The <see cref="P:System.AggregateException.InnerExceptions"></see> collection contains information about the exception or exceptions.</exception>
-        private static async Task<string> DownloadInternalAsync(Request albumRequest, IProgress<DownloadProgressReport> progress,
-            CancellationToken cancellationToken)
+        private async Task<string> DownloadInternalAsync(IRequest albumRequest, CancellationToken cancellationToken)
         {
             var albumRequestSavePath = albumRequest.SavePath;
             var netPath = albumRequest.DownloadPath;
@@ -120,7 +118,7 @@ namespace GHent.RequestProcessor
                 // ReSharper disable once ExceptionNotDocumented
                 report.FinishedPath = finishedTask.Result;
                 report.Finished++;
-                progress.Report(report);
+                progress?.Report(report);
             }
 
             return savePath;

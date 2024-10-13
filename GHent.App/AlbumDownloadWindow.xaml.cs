@@ -151,7 +151,9 @@ namespace GHent.App
                 SavePath = savePath
             };
 
-            return await AlbumRequestProcessor.DownloadAsync(albumRequest, progress, cancellationToken)
+            var requestProcessor = new AlbumRequestProcessor(progress);
+
+            return await requestProcessor.Download(albumRequest, cancellationToken)
                 .ConfigureAwait(false);
         }
 

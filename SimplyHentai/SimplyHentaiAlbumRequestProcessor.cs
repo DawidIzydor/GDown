@@ -7,7 +7,7 @@ using System.Xml.Linq;
 
 namespace Ghent.SimplyHentai
 {
-    public class SimplyHentaiAlbumRequestProcessor(IProgressReporter<string> progress, HtmlWeb htmlWeb, IImageSaver imageSaver) : IRequestProcessor
+    public class SimplyHentaiAlbumRequestProcessor(IProgressReporter<ProgressData<string>> progress, HtmlWeb htmlWeb, IImageSaver imageSaver) : IRequestProcessor
     {
         private const string ThumbnailNodesXPath = "//div[@class='thumbs']/div[@class='thumb-container']";
         private const string AlbumTitleXPath = "//h1[@class='title']/span[@class='pretty']";
@@ -19,23 +19,37 @@ namespace Ghent.SimplyHentai
             string savePath = GenerateSavePath(request, document);
             var thumbContainerNodes = GetThumbnailNodes(document, request);
 
-            var itemProcessor = new SimplyHentaiItemProcessor(htmlWeb, imageSaver);
+            var itemProcessor = new SimplyHentaiItemProcessor(htmlWeb, imageSaver, progress);
 
             if (thumbContainerNodes.Count == 0)
             {
                 throw new InvalidDataException("Thumb container nodes empty");
             }
 
-            progress.Reset(thumbContainerNodes.Count);
+            progress?.Reset(thumbContainerNodes.Count);
             for (int fileIndex = 0; fileIndex < thumbContainerNodes.Count; fileIndex++)
             {
                 var thumbContainerNode = thumbContainerNodes[fileIndex];
 
-                if (thumbContainerNode is null) continue;
+                if (thumbContainerNode is null) {
+                    progress?.Report(new ProgressData<string>
+                    {
+                        Value = $"{savePath} - {fileIndex}",
+                        Type = ProgressType.Failure,
+                        Information = $"Thumb Container node is null"
+                    });
+                    continue; 
+                }
 
                 var anchorNode = GetAnchorNode(thumbContainerNode);
                 if (anchorNode is null)
                 {
+                    progress?.Report(new ProgressData<string>
+                    {
+                        Value = $"{savePath} - {fileIndex}",
+                        Type = ProgressType.Failure,
+                        Information = $"Anchor node is null"
+                    });
                     continue;
                 }
                 // Get the href attribute of the <a> tag
@@ -48,7 +62,16 @@ namespace Ghent.SimplyHentai
                         DownloadPath = GetDownloadPath(href),
                         SavePath = savePath,
                     };
-                    progress.Report(await itemProcessor.Download(itemRequest, cancellationToken));
+                    await itemProcessor.Download(itemRequest, cancellationToken);
+                }
+                else
+                {
+                    progress?.Report(new ProgressData<string>
+                    {
+                        Value = $"{savePath} - {fileIndex}",
+                        Type = ProgressType.Failure,
+                        Information = $"Href node is null"
+                    });
                 }
             }
 

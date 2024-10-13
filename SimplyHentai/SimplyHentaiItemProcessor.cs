@@ -1,4 +1,5 @@
-﻿using GHent.Shared.Request;
+﻿using GHent.Shared.ProgressReporter;
+using GHent.Shared.Request;
 using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Ghent.SimplyHentai
 {
-    public class SimplyHentaiItemProcessor(HtmlWeb htmlWeb, IImageSaver imageSaver) : IRequestProcessor
+    public class SimplyHentaiItemProcessor(HtmlWeb htmlWeb, IImageSaver imageSaver, IProgressReporter<ProgressData<string>> progressReporter) : IRequestProcessor
     {
         private const string ImageXPath = "//section[@id='image-container']//a//img";
 
@@ -24,6 +25,11 @@ namespace Ghent.SimplyHentai
 
             if (File.Exists(savePath))
             {
+                progressReporter?.Report(new ProgressData<string> { 
+                    Type = ProgressType.Skipped,
+                    Value = savePath,
+                    Information = "File already exists"
+                });
                 return savePath;
             }
 

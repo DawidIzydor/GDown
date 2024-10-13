@@ -11,6 +11,7 @@ using Ghent.SimplyHentai;
 using HtmlAgilityPack;
 using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
+using System.Diagnostics;
 
 namespace GHent.App
 {
@@ -22,12 +23,18 @@ namespace GHent.App
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly HtmlWeb _htmlWeb = new();
         private readonly IImageSaver _imageSaver = new HttpClientImageSaver();
+        private readonly IProgressReporter<ProgressData<string>> _progressReporter;
 
         public AlbumDownloadWindow()
         {
             InitializeComponent();
             SourceTextBox.Text = AppSettings.Default.LastDownloadPath;
             SavePath.Text = AppSettings.Default.LastSavePath;
+
+            _progressReporter =
+                    new ActionableProgressReporter<ProgressData<string>>((
+                        IProgressReporter<ProgressData<string>> progress, ProgressData<string> lastDone) 
+                        => Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone));
         }
 
         /// <exception cref="T:System.OverflowException">
@@ -111,10 +118,27 @@ namespace GHent.App
             CancelButton.SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }
 
-        private void ProgressHandler(IProgressReporter<string> progress, string lastDone)
+        private void ProgressHandler(IProgressReporter<ProgressData<string>> reporter, ProgressData<string> lastDone)
         {
-            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, (double)progress.Done * 100.0f / progress.Total);
-            Log($"Downloaded {lastDone}");
+            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, (double)reporter.Done * 100.0f / reporter.Total);
+            switch (lastDone.Type)
+            {
+                case ProgressType.Success:
+                    Log($"Downloaded {lastDone.Value}");
+                    break;
+
+                case ProgressType.Failure:
+                    Log($"Problem downloading {lastDone.Value}: {lastDone.Information}");
+                    break;
+
+                case ProgressType.Skipped:
+                    Log($"Skipped {lastDone.Value}: {lastDone.Information}");
+                    break;
+
+                default:
+                    Log($"Unknown progress type: {lastDone.Value}, {lastDone.Type}, {lastDone.Information}");
+                    break;
+            }
         }
 
         private readonly object logBlock = new();
@@ -156,7 +180,7 @@ namespace GHent.App
             if(downloadUri.Host == "simplyhentai.org" || downloadUri.Host == "nhentai.net")
             {
                 var requestProcessor = new SimplyHentaiAlbumRequestProcessor(
-                    new ActionableProgressReporter<string>((IProgressReporter<string> progress, string lastDone) =>Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone)),
+                    _progressReporter,
                     _htmlWeb,
                     _imageSaver);
 

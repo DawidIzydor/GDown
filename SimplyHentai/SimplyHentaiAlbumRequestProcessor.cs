@@ -2,6 +2,8 @@
 using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
 using HtmlAgilityPack;
+using Polly;
+using Polly.Retry;
 using System.Xml.Linq;
 
 
@@ -13,6 +15,8 @@ namespace Ghent.SimplyHentai
         private const string AlbumTitleXPath = "//h1[@class='title']/span[@class='pretty']";
         private const string AnchorNodeXPath = ".//a";
         private readonly Uri SimplyHentaiUrl = new("https://nhentai.net");
+
+        private readonly AsyncRetryPolicy retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(1, (_) => TimeSpan.FromMilliseconds(100));
         public async Task<string> Download(IRequest request, CancellationToken cancellationToken)
         {
             HtmlDocument document = await DownloadDocument(request, cancellationToken);
@@ -62,7 +66,10 @@ namespace Ghent.SimplyHentai
                         DownloadPath = GetDownloadPath(href),
                         SavePath = savePath,
                     };
-                    await itemProcessor.Download(itemRequest, cancellationToken);
+                    await retryPolicy.ExecuteAsync(async () =>
+                    {
+                        await itemProcessor.Download(itemRequest, cancellationToken);
+                    });
                 }
                 else
                 {

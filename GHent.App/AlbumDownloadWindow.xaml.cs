@@ -22,7 +22,7 @@ namespace GHent.App
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly HtmlWeb _htmlWeb = new();
-        private readonly IImageSaver _imageSaver = new HttpClientImageSaver();
+        private readonly IImageSaver _imageSaver;
         private readonly IProgressReporter<ProgressData<string>> _progressReporter;
 
         public AlbumDownloadWindow()
@@ -35,6 +35,7 @@ namespace GHent.App
                     new ActionableProgressReporter<ProgressData<string>>((
                         IProgressReporter<ProgressData<string>> progress, ProgressData<string> lastDone) 
                         => Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone));
+            _imageSaver = new HttpClientImageSaver(_progressReporter);
         }
 
         /// <exception cref="T:System.OverflowException">

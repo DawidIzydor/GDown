@@ -1,10 +1,9 @@
-﻿using GHent.Models;
+﻿using GHent.Shared;
 using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
 using HtmlAgilityPack;
 using Polly;
 using Polly.Retry;
-using System.Xml.Linq;
 
 
 namespace Ghent.SimplyHentai
@@ -96,6 +95,10 @@ namespace Ghent.SimplyHentai
             var albumTitle = GetAlbumTitle(document);
             var albumRequestSavePath = request.SavePath;
             var savePath = Path.Combine(albumRequestSavePath, albumTitle);
+            if(savePath.Length > 128)
+            {
+                savePath = savePath[0..127];
+            }
             EnsurePathExists(savePath);
             return savePath;
         }

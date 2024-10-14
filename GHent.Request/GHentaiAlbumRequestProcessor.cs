@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GHent.GHentai.Singleton;
-using GHent.Models;
+using GHent.Shared;
 using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
 using HtmlAgilityPack;

@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Windows;
 
 namespace GHent.App
@@ -25,7 +24,7 @@ namespace GHent.App
 
             foreach (var dir in dirs)
             {
-                var dirName = dir.Split("\\").Last();
+                var dirName = GetDirName(dir);
                 var cbrPath = $"{Path.Combine(path, dirName)}.cbr";
                 if (!regenerate && File.Exists(cbrPath))
                 {
@@ -34,6 +33,16 @@ namespace GHent.App
 
                 ZipFile.CreateFromDirectory(dir, cbrPath);
             }
+        }
+
+        private static string GetDirName(string dir)
+        {
+            var index = dir.LastIndexOf('\\');
+            if (index > 0)
+            {
+                return dir[(index + 1)..];
+            }
+            return dir;
         }
     }
 }

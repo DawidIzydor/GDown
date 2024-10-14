@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-#nullable enable
+﻿#nullable enable
 namespace GHent.Shared.ProgressReporter
 {
     public record ProgressData<T>

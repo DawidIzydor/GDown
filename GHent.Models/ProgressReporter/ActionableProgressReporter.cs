@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GHent.Shared.ProgressReporter
 {
@@ -30,6 +26,19 @@ namespace GHent.Shared.ProgressReporter
                 Total = total;
                 Done = 0;
             }
+        }
+
+        public void ReportWithDone(T item, int done)
+        {
+            if (done > 0)
+            {
+                lock (_lock)
+                {
+                    Done+=done;
+                }
+            }
+
+            reportAction.Invoke(this, item);
         }
     }
 }

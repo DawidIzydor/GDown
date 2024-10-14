@@ -7,5 +7,6 @@ namespace GHent.Shared.ProgressReporter
         Success = 1,
         Failure = 0,
         Skipped = 2,
+        Information = 4,
     }
 }

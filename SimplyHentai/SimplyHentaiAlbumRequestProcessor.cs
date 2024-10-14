@@ -29,9 +29,35 @@ namespace Ghent.SimplyHentai
                 throw new InvalidDataException("Thumb container nodes empty");
             }
 
+            var files = Directory.GetFiles(savePath);
+            var skipFiles = new HashSet<int>();
+            foreach (var file in files) {
+                var lastDashIndex = file.LastIndexOf("\\");
+                if (lastDashIndex == -1) continue;
+
+                var dotIndex = file.LastIndexOf(".");
+
+                var numberStr = file[(lastDashIndex+1)..dotIndex];
+                int number;
+                if (int.TryParse(numberStr, out number))
+                {
+                    skipFiles.Add(number);
+                }
+            }
+
             progress?.Reset(thumbContainerNodes.Count);
             for (int fileIndex = 0; fileIndex < thumbContainerNodes.Count; fileIndex++)
             {
+                if (skipFiles.Contains(fileIndex)) {
+                    progress?.Report(new ProgressData<string>
+                    {
+                        Type = ProgressType.Skipped,
+                        Value = savePath,
+                        Information = fileIndex.ToString()
+                    });
+                    continue;
+                }
+
                 var thumbContainerNode = thumbContainerNodes[fileIndex];
 
                 if (thumbContainerNode is null) {
@@ -65,6 +91,7 @@ namespace Ghent.SimplyHentai
                         DownloadPath = GetDownloadPath(href),
                         SavePath = savePath,
                     };
+
                     await retryPolicy.ExecuteAsync(async () =>
                     {
                         await itemProcessor.Download(itemRequest, cancellationToken);

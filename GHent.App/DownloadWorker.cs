@@ -91,15 +91,29 @@ namespace GHent.App
 
             if (saveCbr)
             {
-                string cbrFileName = GetCbrFileName(savePath, directoryPath);
-                
-                progressReporter?.ReportWithDone(new ProgressData<string> { 
-                    Type = ProgressType.Information, 
-                    Value = $"Will save {directoryPath} into {cbrFileName}" 
+                CreateCbr(progressReporter, savePath, directoryPath);
+            }
+        }
+
+        private static void CreateCbr(IProgressReporter<ProgressData<string>> progressReporter, string savePath, string directoryPath)
+        {
+            string cbrFileName = GetCbrFileName(savePath, directoryPath);
+
+            if (File.Exists(cbrFileName))
+            {
+                progressReporter?.ReportWithDone(new ProgressData<string> { Type = ProgressType.Skipped, Value = cbrFileName, Information = "File already exists" }, 0);
+            }
+            else
+            {
+                progressReporter?.ReportWithDone(new ProgressData<string>
+                {
+                    Type = ProgressType.Information,
+                    Value = $"Will save {directoryPath} into {cbrFileName}"
                 }, 0);
                 ZipFile.CreateFromDirectory(directoryPath, cbrFileName);
             }
         }
+
         /// <exception cref="T:System.IO.IOException">
         ///     The directory specified by path is a file.   -or-   The network name is not
         ///     known.

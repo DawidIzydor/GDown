@@ -19,7 +19,7 @@
                     IsEnabled="False" />
         </Grid>
         <CheckBox x:Name="saveCbrCheckbox" Content="Create CBR" IsChecked="True"></CheckBox>
-        <Button x:Name="DownloadButton" Content="Download" Margin="0, 1, 0, 1" Click="DownloadButton_Click" />
+        <Button x:Name="DownloadButton" Content="Enqueue" Margin="0, 1, 0, 1" Click="DownloadButton_Click" />
         <Button x:Name="CancelButton" Content="Cancel" Visibility="Collapsed" Click="CancelButton_Click" />
         <Label Content="Progress"></Label>
         <ProgressBar Height="20" Width="auto" Margin="0, 1, 0, 1" x:Name="ProgressBar" />

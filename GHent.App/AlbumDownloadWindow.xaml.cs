@@ -1,17 +1,10 @@
 ﻿using System;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using GHent.GHentai;
-using GHent.Models;
 using Ghent.SimplyHentai;
 using HtmlAgilityPack;
 using GHent.Shared.ProgressReporter;
-using GHent.Shared.Request;
-using System.Diagnostics;
 
 namespace GHent.App
 {
@@ -24,6 +17,7 @@ namespace GHent.App
         private readonly HtmlWeb _htmlWeb = new();
         private readonly IImageSaver _imageSaver;
         private readonly IProgressReporter<ProgressData<string>> _progressReporter;
+        private readonly DownloadWorker _downloadWorker;
 
         public AlbumDownloadWindow()
         {
@@ -36,6 +30,7 @@ namespace GHent.App
                         IProgressReporter<ProgressData<string>> progress, ProgressData<string> lastDone) 
                         => Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone));
             _imageSaver = new HttpClientImageSaver(_progressReporter);
+            _downloadWorker = new DownloadWorker(_progressReporter, _htmlWeb, _imageSaver, _cancellationTokenSource);
         }
 
         /// <exception cref="T:System.OverflowException">
@@ -57,26 +52,18 @@ namespace GHent.App
         /// </exception>
         private async void DownloadButton_Click(object sender, RoutedEventArgs e)
         {
+            string downloadUrl = null;
             try
             {
                 Log("Started");
                 ResetDownloadUiElements();
 
                 var savePath = SavePath.Text;
-                var downloadUri = new Uri(SourceTextBox.Text);
+                downloadUrl = SourceTextBox.Text;
+                var saveCbr = saveCbrCheckbox.IsChecked ?? true;
 
-                VerifyDirectoryExists(savePath);
-
-                var directoryPath = await DownloadAsync(savePath, downloadUri,
-                    _cancellationTokenSource.Token).ConfigureAwait(true);
-
-                var saveCbr = saveCbrCheckbox.IsChecked ?? false;
-                if(saveCbr)
-                {
-                    string cbrFileName = GetCbrFileName(savePath, directoryPath);
-                    Log($"Will save {directoryPath} into {cbrFileName}");
-                    ZipFile.CreateFromDirectory(directoryPath, cbrFileName);
-                }
+                _downloadWorker.Enqueue(downloadUrl, savePath, saveCbr);
+                _downloadWorker.Run();
             }
             catch (OperationCanceledException)
             {
@@ -100,17 +87,11 @@ namespace GHent.App
             {
                 DownloadButton.SetCurrentValue(VisibilityProperty, Visibility.Visible);
                 CancelButton.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
-                Log("Finished");
+                Log($"Enqueued {downloadUrl}");
             }
         }
 
-        private static string GetCbrFileName(string savePathText, string directoryPath)
-        {
-            var dirSplit = directoryPath.Split('\\');
-            var filename = dirSplit[^1] != "" ? dirSplit[^1] : dirSplit[^2];
-            var cbrFileName = Path.Combine(savePathText, filename) + ".cbr";
-            return cbrFileName;
-        }
+
 
         private void ResetDownloadUiElements()
         {
@@ -136,6 +117,10 @@ namespace GHent.App
                     Log($"Skipped {lastDone.Value}: {lastDone.Information}");
                     break;
 
+                case ProgressType.Information:
+                    Log($"{lastDone.Value}: {lastDone.Information}");
+                    break;
+
                 default:
                     Log($"Unknown progress type: {lastDone.Value}, {lastDone.Type}, {lastDone.Information}");
                     break;
@@ -149,90 +134,6 @@ namespace GHent.App
             {
                 LogBlock.SetCurrentValue(System.Windows.Controls.TextBlock.TextProperty, $"{DateTime.Now:g} {str}{Environment.NewLine}{LogBlock.Text}");
             }
-        }
-
-        /// <exception cref="T:System.IO.IOException">
-        ///     The directory specified by path is a file.   -or-   The network name is not
-        ///     known.
-        /// </exception>
-        /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
-        /// <exception cref="T:System.IO.DirectoryNotFoundException">
-        ///     The specified path is invalid (for example, it is on an
-        ///     unmapped drive).
-        /// </exception>
-        /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
-        /// <exception cref="T:System.OverflowException">
-        ///     <paramref>s</paramref> represents a number less than
-        ///     <see cref="F:System.Int32.MinValue"></see> or greater than <see cref="F:System.Int32.MaxValue"></see>.
-        /// </exception>
-        /// <exception cref="T:GHent.RequestProcessor.TransferExceededException">Transfer was exceeded</exception>
-        /// <exception cref="T:System.AggregateException"></exception>
-        private async Task<string> DownloadAsync(string savePath, Uri downloadUri,
-            CancellationToken cancellationToken)
-        {
-            SaveLastUsedPaths(downloadUri, savePath);
-
-            var albumRequest = new Request
-            {
-                DownloadPath = downloadUri,
-                SavePath = savePath
-            };
-
-            if(downloadUri.Host == "simplyhentai.org" || downloadUri.Host == "nhentai.net")
-            {
-                var requestProcessor = new SimplyHentaiAlbumRequestProcessor(
-                    _progressReporter,
-                    _htmlWeb,
-                    _imageSaver);
-
-                return await requestProcessor.Download(albumRequest, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                var requestProcessor = new GHentaiAlbumRequestProcessor(new ActionableProgressReporter<string>((IProgressReporter<string> progress, string lastDone) => Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone)), _htmlWeb);
-
-                return await requestProcessor.Download(albumRequest, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-        }
-
-        /// <exception cref="T:System.IO.IOException">
-        ///     The directory specified by <paramref /> is a file.
-        ///     -or-
-        ///     The network name is not known.
-        /// </exception>
-        /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
-        /// <exception cref="T:System.IO.DirectoryNotFoundException">
-        ///     The specified path is invalid (for example, it is on an
-        ///     unmapped drive).
-        /// </exception>
-        /// <exception cref="T:System.ArgumentOutOfRangeException">MessageBox result not found</exception>
-        private static void VerifyDirectoryExists(string savePath)
-        {
-            if (Directory.Exists(savePath))
-            {
-                return;
-            }
-
-            var result = MessageBox.Show("Save directory does not exist, create it?", "Question",
-                MessageBoxButton.YesNo);
-            switch (result)
-            {
-                case MessageBoxResult.Yes:
-                    Directory.CreateDirectory(savePath);
-                    return;
-                case MessageBoxResult.No:
-                    throw new DirectoryNotFoundException();
-                default:
-                    throw new InvalidOperationException($"Result not found: {result}");
-            }
-        }
-
-        private static void SaveLastUsedPaths(Uri downloadUri, string savePath)
-        {
-            AppSettings.Default.LastDownloadPath = downloadUri.ToString();
-            AppSettings.Default.LastSavePath = savePath;
-            AppSettings.Default.Save();
         }
 
         /// <exception cref="T:System.AggregateException">

@@ -102,7 +102,7 @@ namespace GHent.App
 
         private void ProgressHandler(IProgressReporter<ProgressData<string>> reporter, ProgressData<string> lastDone)
         {
-            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, (double)reporter.Done * 100.0f / reporter.Total);
+            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, reporter.Total != 0 ? (double)reporter.Done * 100.0f / reporter.Total : 0);
             switch (lastDone.Type)
             {
                 case ProgressType.Success:

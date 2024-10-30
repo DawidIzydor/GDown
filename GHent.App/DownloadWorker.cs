@@ -43,6 +43,8 @@ namespace GHent.App
                 {
                     (var downloadUrl, var savePath, var saveCbr) = _downloadQueue.Dequeue();
 
+                    progressReporter.Report(new ProgressData<string> { Type = ProgressType.Information, Value = "Processing next item in queue.", Information = $"Left in queue: {_downloadQueue.Count}" });
+
                     var downloadUri = new Uri(downloadUrl);
 
                     await DownloadElementAsync(savePath, downloadUri, saveCbr);

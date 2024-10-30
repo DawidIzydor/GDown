@@ -55,12 +55,13 @@ namespace GHent.App
             string downloadUrl = null;
             try
             {
-                Log("Started");
                 ResetDownloadUiElements();
 
                 var savePath = SavePath.Text;
                 downloadUrl = SourceTextBox.Text;
                 var saveCbr = saveCbrCheckbox.IsChecked ?? true;
+
+                Log($"Adding to queue: URL: {downloadUrl}, Save Path: {savePath}, Save CBR: {saveCbr}");
 
                 _downloadWorker.Enqueue(downloadUrl, savePath, saveCbr);
                 _downloadWorker.Run();
@@ -95,7 +96,6 @@ namespace GHent.App
 
         private void ResetDownloadUiElements()
         {
-            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, (double)0);
             DownloadButton.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
             CancelButton.SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }

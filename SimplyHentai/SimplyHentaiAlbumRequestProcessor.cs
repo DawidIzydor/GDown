@@ -15,7 +15,11 @@ namespace Ghent.SimplyHentai
         private const string AnchorNodeXPath = ".//a";
         private readonly Uri SimplyHentaiUrl = new("https://nhentai.net");
 
-        private readonly AsyncRetryPolicy retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(1, (_) => TimeSpan.FromMilliseconds(100));
+        private readonly IAsyncPolicy pollyPolicy = 
+            Policy.WrapAsync(
+                Policy.Handle<Exception>().WaitAndRetryAsync(3, (_) => TimeSpan.FromMilliseconds(100)),
+                Policy.TimeoutAsync(30)
+             );
         public async Task<string> Download(IRequest request, CancellationToken cancellationToken)
         {
             HtmlDocument document = await DownloadDocument(request, cancellationToken);
@@ -41,19 +45,20 @@ namespace Ghent.SimplyHentai
                 int number;
                 if (int.TryParse(numberStr, out number))
                 {
-                    skipFiles.Add(number);
+                    skipFiles.Add(number-1);
                 }
             }
 
             progress?.Reset(thumbContainerNodes.Count);
             for (int fileIndex = 0; fileIndex < thumbContainerNodes.Count; fileIndex++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (skipFiles.Contains(fileIndex)) {
                     progress?.Report(new ProgressData<string>
                     {
                         Type = ProgressType.Skipped,
                         Value = savePath,
-                        Information = fileIndex.ToString()
+                        Information = (fileIndex+1).ToString()
                     });
                     continue;
                 }
@@ -92,7 +97,7 @@ namespace Ghent.SimplyHentai
                         SavePath = savePath,
                     };
 
-                    await retryPolicy.ExecuteAsync(async () =>
+                    await pollyPolicy.ExecuteAsync(async () =>
                     {
                         await itemProcessor.Download(itemRequest, cancellationToken);
                     });

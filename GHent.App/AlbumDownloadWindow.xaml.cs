@@ -2,10 +2,7 @@
 using System.Threading;
 using System.Windows;
 using GHent.GHentai;
-using Ghent.SimplyHentai;
-using HtmlAgilityPack;
 using GHent.Shared.ProgressReporter;
-using GHent.Shared.CbrCreator;
 
 namespace GHent.App
 {
@@ -15,26 +12,23 @@ namespace GHent.App
     public sealed partial class AlbumDownloadWindow : IDisposable
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
-        private readonly HtmlWeb _htmlWeb = new();
-        private readonly IImageSaver _imageSaver;
-        private readonly IProgressReporter<ProgressData<string>> _progressReporter;
+        private readonly object logBlock = new();
         private readonly DownloadWorker _downloadWorker;
-        private readonly ICbrCreator _cbrCreator;
 
-        public AlbumDownloadWindow()
+        public AlbumDownloadWindow(DownloadWorker downloadWorker, IEventableProgressReporter eventableProgressReporter)
         {
             InitializeComponent();
             TaskbarItemInfo = new System.Windows.Shell.TaskbarItemInfo();
             SourceTextBox.Text = AppSettings.Default.LastDownloadPath;
             SavePath.Text = AppSettings.Default.LastSavePath;
+            eventableProgressReporter.OnProgress += (sender, args) => {
+                Application.Current.Dispatcher.Invoke(ProgressHandler, args);
+            };
+            eventableProgressReporter.OnReset += (sender, args) =>
+            {
 
-            _progressReporter =
-                    new ActionableProgressReporter<ProgressData<string>>((
-                        IProgressReporter<ProgressData<string>> progress, ProgressData<string> lastDone) 
-                        => Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone));
-            _imageSaver = new HttpClientImageSaver(_progressReporter);
-            _cbrCreator = new CbrCreator(_progressReporter);
-            _downloadWorker = new DownloadWorker(_progressReporter, _htmlWeb, _imageSaver, _cbrCreator,_cancellationTokenSource);
+            };
+            _downloadWorker = downloadWorker;
         }
 
         /// <exception cref="T:System.OverflowException">
@@ -104,38 +98,37 @@ namespace GHent.App
             CancelButton.SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }
 
-        private void ProgressHandler(IProgressReporter<ProgressData<string>> reporter, ProgressData<string> lastDone)
+        private void ProgressHandler(object args)
         {
-            double progressValue = reporter.Total != 0 ? reporter.Done * 100.0d / reporter.Total : 0;
-            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, progressValue);
 
-            TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressValueProperty, progressValue/100.0d);
-            switch (lastDone.Type)
+            if (args is ProgressEventArgs progressEventArgs)
             {
-                case ProgressType.Success:
-                    Log($"Downloaded {lastDone.Value}");
-                    TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Normal);
-                    break;
+                double progressValue = progressEventArgs.Total != 0 ? progressEventArgs.Done * 100.0d / progressEventArgs.Total : 0;
+                ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, progressValue);
 
-                case ProgressType.Failure:
-                    Log($"Problem downloading {lastDone.Value}: {lastDone.Information}");
-                    TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Error);
-                    break;
+                TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressValueProperty, progressValue / 100.0d);
+                switch (progressEventArgs.ProgressType)
+                {
+                    case ProgressType.Success:
+                        TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Normal);
+                        break;
 
-                case ProgressType.Skipped:
-                    break;
+                    case ProgressType.Failure:
+                        TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Error);
+                        break;
 
-                case ProgressType.Information:
-                    Log($"{lastDone.Value}: {lastDone.Information}");
-                    break;
-
-                default:
-                    Log($"Unknown progress type: {lastDone.Value}, {lastDone.Type}, {lastDone.Information}");
-                    break;
+                    default:
+                        break;
+                }
+                Log($"{progressEventArgs}");
+            }
+            else
+            {
+                Log($"{args}");
             }
         }
 
-        private readonly object logBlock = new();
+
         private void Log(string str)
         {
             lock (logBlock)

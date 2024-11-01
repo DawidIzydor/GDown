@@ -1,24 +1,21 @@
 ﻿using System;
 using System.IO;
-using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Ghent.SimplyHentai;
-using HtmlAgilityPack;
 using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
 using System.Collections.Generic;
-using System.Windows.Media.Animation;
 using GHent.Shared.CbrCreator;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GHent.App
 {
-    public class DownloadWorker(IProgressReporter<ProgressData<string>> progressReporter, 
-        HtmlWeb htmlWeb,
-        IImageSaver imageSaver,
+    public class DownloadWorker(IEventableProgressReporter progressReporter, 
         ICbrCreator cbrCreator,
-        CancellationTokenSource cancellationTokenSource)
+        CancellationTokenSource cancellationTokenSource,
+        IServiceProvider serviceProvider)
     {
         private readonly Queue<(string downloadPath, string savePath, bool saveCbr)> _downloadQueue = new();
         private Thread _backgroundThread = null;
@@ -45,7 +42,10 @@ namespace GHent.App
                 {
                     (var downloadUrl, var savePath, var saveCbr) = _downloadQueue.Dequeue();
 
-                    progressReporter.Report(new ProgressData<string> { Type = ProgressType.Information, Value = "Processing next item in queue.", Information = $"Left in queue: {_downloadQueue.Count}" });
+                    progressReporter.Report(
+                        ProgressType.Information, 
+                        amount: 0, 
+                        message: $"Processing next item in queue. Left in queue: {_downloadQueue.Count}");
 
                     var downloadUri = new Uri(downloadUrl);
 
@@ -89,11 +89,10 @@ namespace GHent.App
             var directoryPath = await DownloadAsync(savePath, downloadUri,
                 cancellationTokenSource.Token).ConfigureAwait(true);
 
-            progressReporter?.ReportWithDone(
-                new ProgressData<string> { 
-                    Type = ProgressType.Information, 
-                    Value = $"Downloaded {directoryPath}" }
-                , 0);
+            progressReporter.Report(
+                ProgressType.Success, 
+                amount: 0, 
+                message: $"Finished {directoryPath}");
 
             if (saveCbr)
             {
@@ -130,10 +129,8 @@ namespace GHent.App
 
             if (downloadUri.Host == "simplyhentai.org" || downloadUri.Host == "nhentai.net")
             {
-                var requestProcessor = new SimplyHentaiAlbumRequestProcessor(
-                    progressReporter,
-                    htmlWeb,
-                    imageSaver);
+
+                var requestProcessor = serviceProvider.GetRequiredService<SimplyHentaiAlbumRequestProcessor>();
 
                 return await requestProcessor.Download(albumRequest, cancellationToken).ConfigureAwait(false);
             }

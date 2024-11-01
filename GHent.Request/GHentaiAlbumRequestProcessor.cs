@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using GHent.GHentai.Singleton;
 using GHent.Shared;
 using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
@@ -17,7 +16,7 @@ namespace GHent.GHentai
     {
         public string DownloadUrl { get; set; }
     }
-    public class GHentaiAlbumRequestProcessor(IProgressReporter<string> progress, HtmlWeb htmlWeb) : IRequestProcessor
+    public class GHentaiAlbumRequestProcessor(IEventableProgressReporter progress, HtmlWeb htmlWeb) : IRequestProcessor
     {
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
         /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>
@@ -104,7 +103,7 @@ namespace GHent.GHentai
                 var finishedTask = await Task.WhenAny(tasks).ConfigureAwait(false);
                 tasks.Remove(finishedTask);
 
-                progress.Report(await finishedTask);
+                progress.Report(ProgressType.Success, reportedItem: await finishedTask);
             }
 
             return savePath;

@@ -3,12 +3,11 @@ using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
 using HtmlAgilityPack;
 using Polly;
-using Polly.Retry;
 
 
 namespace Ghent.SimplyHentai
 {
-    public class SimplyHentaiAlbumRequestProcessor(IProgressReporter<ProgressData<string>> progress, HtmlWeb htmlWeb, IImageSaver imageSaver) : IRequestProcessor
+    public class SimplyHentaiAlbumRequestProcessor(IEventableProgressReporter progress, HtmlWeb htmlWeb, SimplyHentaiItemProcessor simplyHentaiItemProcessor) : IRequestProcessor
     {
         private const string ThumbnailNodesXPath = "//div[@class='thumbs']/div[@class='thumb-container']";
         private const string AlbumTitleXPath = "//h1[@class='title']/span[@class='pretty']";
@@ -26,8 +25,6 @@ namespace Ghent.SimplyHentai
             string savePath = GenerateSavePath(request, document);
             var thumbContainerNodes = GetThumbnailNodes(document, request);
 
-            var itemProcessor = new SimplyHentaiItemProcessor(htmlWeb, imageSaver, progress);
-
             if (thumbContainerNodes.Count == 0)
             {
                 throw new InvalidDataException("Thumb container nodes empty");
@@ -42,48 +39,34 @@ namespace Ghent.SimplyHentai
                 var dotIndex = file.LastIndexOf(".");
 
                 var numberStr = file[(lastDashIndex+1)..dotIndex];
-                int number;
-                if (int.TryParse(numberStr, out number))
+                if (int.TryParse(numberStr, out int number))
                 {
-                    skipFiles.Add(number-1);
+                    skipFiles.Add(number - 1);
                 }
             }
 
-            progress?.Reset(thumbContainerNodes.Count);
+            progress.Reset(thumbContainerNodes.Count);
             for (int fileIndex = 0; fileIndex < thumbContainerNodes.Count; fileIndex++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (skipFiles.Contains(fileIndex)) {
-                    progress?.Report(new ProgressData<string>
-                    {
-                        Type = ProgressType.Skipped,
-                        Value = savePath,
-                        Information = (fileIndex+1).ToString()
-                    });
+
+                    progress.Report(ProgressType.Skipped, amount: 1, reportedItem: $"{savePath} - {fileIndex}");
                     continue;
                 }
 
                 var thumbContainerNode = thumbContainerNodes[fileIndex];
 
-                if (thumbContainerNode is null) {
-                    progress?.Report(new ProgressData<string>
-                    {
-                        Value = $"{savePath} - {fileIndex}",
-                        Type = ProgressType.Failure,
-                        Information = $"Thumb Container node is null"
-                    });
+                if (thumbContainerNode is null)
+                {
+                    progress.Report(ProgressType.Failure, amount: 0, reportedItem: $"{savePath} - {fileIndex}", message: "Thumb Container node is null");
                     continue; 
                 }
 
                 var anchorNode = GetAnchorNode(thumbContainerNode);
                 if (anchorNode is null)
                 {
-                    progress?.Report(new ProgressData<string>
-                    {
-                        Value = $"{savePath} - {fileIndex}",
-                        Type = ProgressType.Failure,
-                        Information = $"Anchor node is null"
-                    });
+                    progress.Report(ProgressType.Failure, amount: 0, reportedItem: $"{savePath} - {fileIndex}", message: "Anchor node is null");
                     continue;
                 }
                 // Get the href attribute of the <a> tag
@@ -99,17 +82,12 @@ namespace Ghent.SimplyHentai
 
                     await pollyPolicy.ExecuteAsync(async () =>
                     {
-                        await itemProcessor.Download(itemRequest, cancellationToken);
+                        await simplyHentaiItemProcessor.Download(itemRequest, cancellationToken);
                     });
                 }
                 else
                 {
-                    progress?.Report(new ProgressData<string>
-                    {
-                        Value = $"{savePath} - {fileIndex}",
-                        Type = ProgressType.Failure,
-                        Information = $"Href node is null"
-                    });
+                    progress.Report(ProgressType.Failure, amount: 0, reportedItem: $"{savePath} - {fileIndex}", message: $"Href node is null");
                 }
             }
 

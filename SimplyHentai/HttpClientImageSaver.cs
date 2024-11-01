@@ -2,7 +2,7 @@
 
 namespace Ghent.SimplyHentai
 {
-    public class HttpClientImageSaver(IProgressReporter<ProgressData<string>>? progressReporter = default) : IImageSaver
+    public class HttpClientImageSaver(IEventableProgressReporter progressReporter) : IImageSaver
     {
 
         public async Task SaveImage(string imageUrl, string savePath, CancellationToken cancellationToken)
@@ -15,11 +15,8 @@ namespace Ghent.SimplyHentai
 
             await File.WriteAllBytesAsync(savePath, imageBytes, cancellationToken);
 
-            progressReporter?.Report(new ProgressData<string>
-            {
-                Value = savePath,
-                Type = ProgressType.Success
-            });
+
+            progressReporter.Report(ProgressType.Success, reportedItem: savePath);
         }
     }
 }

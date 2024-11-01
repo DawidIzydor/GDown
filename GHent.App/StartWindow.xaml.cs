@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Windows;
 
 namespace GHent.App
@@ -8,55 +9,26 @@ namespace GHent.App
     /// </summary>
     public partial class StartWindow
     {
-        public StartWindow() => InitializeComponent();
+        public StartWindow(IServiceProvider serviceProvider)
+        {
+            InitializeComponent();
+            _serviceProvider = serviceProvider;
+        }
 
         private AlbumDownloadWindow _albumDownloadWindow;
         private CbrCreatorWindow _cbrWindow;
+        private readonly IServiceProvider _serviceProvider;
 
         private void AlbumDownloadButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_albumDownloadWindow == null)
-            {
-                _albumDownloadWindow = new AlbumDownloadWindow();
-                _albumDownloadWindow.Show();
-            }
-            else
-            {
-                try
-                {
-                    _albumDownloadWindow.Show();
-                }
-                catch (InvalidOperationException)
-                {
-                    _albumDownloadWindow.Close();
-                    _albumDownloadWindow = new AlbumDownloadWindow();
-                    _albumDownloadWindow.Show();
-                }
-                _albumDownloadWindow.Focus();
-            }
+            _albumDownloadWindow ??= _serviceProvider.GetService<AlbumDownloadWindow>();
+            _albumDownloadWindow.Show();
         }
 
         private void GenerateCbrButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_cbrWindow == null)
-            {
-                _cbrWindow = new CbrCreatorWindow();
-                _cbrWindow.Show();
-            }
-            else
-            {
-                try
-                {
-                    _cbrWindow.Show();
-                }
-                catch (InvalidOperationException)
-                {
-                    _cbrWindow.Close();
-                    _cbrWindow = new CbrCreatorWindow();
-                    _cbrWindow.Show();
-                }
-                _cbrWindow.Focus();
-            }
+            _cbrWindow ??= _serviceProvider.GetService<CbrCreatorWindow>();
+            _cbrWindow.Show();
         }
     }
 }

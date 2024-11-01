@@ -4,7 +4,7 @@ using HtmlAgilityPack;
 
 namespace Ghent.SimplyHentai
 {
-    public class SimplyHentaiItemProcessor(HtmlWeb htmlWeb, IImageSaver imageSaver, IProgressReporter<ProgressData<string>> progressReporter) : IRequestProcessor
+    public class SimplyHentaiItemProcessor(HtmlWeb htmlWeb, IImageSaver imageSaver, IEventableProgressReporter progressReporter) : IRequestProcessor
     {
         private const string ImageXPath = "//section[@id='image-container']//a//img";
 
@@ -20,11 +20,7 @@ namespace Ghent.SimplyHentai
 
             if (File.Exists(savePath))
             {
-                progressReporter?.Report(new ProgressData<string> { 
-                    Type = ProgressType.Skipped,
-                    Value = savePath,
-                    Information = "File already exists"
-                });
+                progressReporter.Report(ProgressType.Skipped, amount: 1, message: "File already exists", reportedItem: savePath);
                 return savePath;
             }
 

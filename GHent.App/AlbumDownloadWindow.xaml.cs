@@ -120,13 +120,10 @@ namespace GHent.App
                     break;
 
                 case ProgressType.Skipped:
-                    Log($"Skipped {lastDone.Value}: {lastDone.Information}");
-                    TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Normal);
                     break;
 
                 case ProgressType.Information:
                     Log($"{lastDone.Value}: {lastDone.Information}");
-                    TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Indeterminate);
                     break;
 
                 default:

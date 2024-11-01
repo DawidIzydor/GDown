@@ -103,17 +103,15 @@ namespace GHent.App
 
             if (File.Exists(cbrFileName))
             {
-                progressReporter?.ReportWithDone(new ProgressData<string> { Type = ProgressType.Skipped, Value = cbrFileName, Information = "File already exists" }, 0);
+                progressReporter?.ReportWithDone(new ProgressData<string> { Type = ProgressType.Information, Value = cbrFileName, Information = "Will override" }, 0);
+                File.Delete(cbrFileName );
             }
-            else
+            progressReporter?.ReportWithDone(new ProgressData<string>
             {
-                progressReporter?.ReportWithDone(new ProgressData<string>
-                {
-                    Type = ProgressType.Information,
-                    Value = $"Will save {directoryPath} into {cbrFileName}"
-                }, 0);
-                ZipFile.CreateFromDirectory(directoryPath, cbrFileName);
-            }
+                Type = ProgressType.Information,
+                Value = $"Will save {directoryPath} into {cbrFileName}"
+            }, 0);
+            ZipFile.CreateFromDirectory(directoryPath, cbrFileName);
         }
 
         /// <exception cref="T:System.IO.IOException">

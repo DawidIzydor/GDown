@@ -8,10 +8,7 @@ namespace GHent.App
     /// </summary>
     public partial class StartWindow
     {
-        public StartWindow()
-        {
-            InitializeComponent();
-        }
+        public StartWindow() => InitializeComponent();
 
         private AlbumDownloadWindow _albumDownloadWindow;
         private CbrCreatorWindow _cbrWindow;

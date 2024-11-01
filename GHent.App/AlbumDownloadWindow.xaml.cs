@@ -5,6 +5,7 @@ using GHent.GHentai;
 using Ghent.SimplyHentai;
 using HtmlAgilityPack;
 using GHent.Shared.ProgressReporter;
+using GHent.Shared.CbrCreator;
 
 namespace GHent.App
 {
@@ -18,6 +19,7 @@ namespace GHent.App
         private readonly IImageSaver _imageSaver;
         private readonly IProgressReporter<ProgressData<string>> _progressReporter;
         private readonly DownloadWorker _downloadWorker;
+        private readonly ICbrCreator _cbrCreator;
 
         public AlbumDownloadWindow()
         {
@@ -31,7 +33,8 @@ namespace GHent.App
                         IProgressReporter<ProgressData<string>> progress, ProgressData<string> lastDone) 
                         => Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone));
             _imageSaver = new HttpClientImageSaver(_progressReporter);
-            _downloadWorker = new DownloadWorker(_progressReporter, _htmlWeb, _imageSaver, _cancellationTokenSource);
+            _cbrCreator = new CbrCreator(_progressReporter);
+            _downloadWorker = new DownloadWorker(_progressReporter, _htmlWeb, _imageSaver, _cbrCreator,_cancellationTokenSource);
         }
 
         /// <exception cref="T:System.OverflowException">

@@ -10,19 +10,21 @@ using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
 using System.Collections.Generic;
 using System.Windows.Media.Animation;
+using GHent.Shared.CbrCreator;
 
 namespace GHent.App
 {
     public class DownloadWorker(IProgressReporter<ProgressData<string>> progressReporter, 
         HtmlWeb htmlWeb,
         IImageSaver imageSaver,
+        ICbrCreator cbrCreator,
         CancellationTokenSource cancellationTokenSource)
     {
         private readonly Queue<(string downloadPath, string savePath, bool saveCbr)> _downloadQueue = new();
         private Thread _backgroundThread = null;
 
         public bool IsRunning { get; private set; }
-        private readonly object runLock = new object();
+        private readonly object runLock = new();
 
         public void Enqueue(string downloadPath, string savePath, bool saveCbr)
         {
@@ -63,8 +65,10 @@ namespace GHent.App
         {
             if(_backgroundThread is null)
             {
-                _backgroundThread = new Thread(async () => await DoWork());
-                _backgroundThread.IsBackground = true;
+                _backgroundThread = new Thread(async () => await DoWork())
+                {
+                    IsBackground = true
+                };
                 _backgroundThread.Start();
             }
             else
@@ -93,25 +97,8 @@ namespace GHent.App
 
             if (saveCbr)
             {
-                CreateCbr(progressReporter, savePath, directoryPath);
+                cbrCreator.CreateCbr(savePath, directoryPath);
             }
-        }
-
-        private static void CreateCbr(IProgressReporter<ProgressData<string>> progressReporter, string savePath, string directoryPath)
-        {
-            string cbrFileName = GetCbrFileName(savePath, directoryPath);
-
-            if (File.Exists(cbrFileName))
-            {
-                progressReporter?.ReportWithDone(new ProgressData<string> { Type = ProgressType.Information, Value = cbrFileName, Information = "Will override" }, 0);
-                File.Delete(cbrFileName );
-            }
-            progressReporter?.ReportWithDone(new ProgressData<string>
-            {
-                Type = ProgressType.Information,
-                Value = $"Will save {directoryPath} into {cbrFileName}"
-            }, 0);
-            ZipFile.CreateFromDirectory(directoryPath, cbrFileName);
         }
 
         /// <exception cref="T:System.IO.IOException">
@@ -200,12 +187,5 @@ namespace GHent.App
             }
         }
 
-        private static string GetCbrFileName(string savePathText, string directoryPath)
-        {
-            var dirSplit = directoryPath.Split('\\');
-            var filename = dirSplit[^1] != "" ? dirSplit[^1] : dirSplit[^2];
-            var cbrFileName = Path.Combine(savePathText, filename) + ".cbr";
-            return cbrFileName;
-        }
     }
 }

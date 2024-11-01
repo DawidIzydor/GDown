@@ -22,6 +22,7 @@ namespace GHent.App
         public AlbumDownloadWindow()
         {
             InitializeComponent();
+            TaskbarItemInfo = new System.Windows.Shell.TaskbarItemInfo();
             SourceTextBox.Text = AppSettings.Default.LastDownloadPath;
             SavePath.Text = AppSettings.Default.LastSavePath;
 
@@ -102,23 +103,30 @@ namespace GHent.App
 
         private void ProgressHandler(IProgressReporter<ProgressData<string>> reporter, ProgressData<string> lastDone)
         {
-            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, reporter.Total != 0 ? (double)reporter.Done * 100.0f / reporter.Total : 0);
+            double progressValue = reporter.Total != 0 ? reporter.Done * 100.0d / reporter.Total : 0;
+            ProgressBar.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty, progressValue);
+
+            TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressValueProperty, progressValue/100.0d);
             switch (lastDone.Type)
             {
                 case ProgressType.Success:
                     Log($"Downloaded {lastDone.Value}");
+                    TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Normal);
                     break;
 
                 case ProgressType.Failure:
                     Log($"Problem downloading {lastDone.Value}: {lastDone.Information}");
+                    TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Error);
                     break;
 
                 case ProgressType.Skipped:
                     Log($"Skipped {lastDone.Value}: {lastDone.Information}");
+                    TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Normal);
                     break;
 
                 case ProgressType.Information:
                     Log($"{lastDone.Value}: {lastDone.Information}");
+                    TaskbarItemInfo.SetCurrentValue(System.Windows.Shell.TaskbarItemInfo.ProgressStateProperty, System.Windows.Shell.TaskbarItemProgressState.Indeterminate);
                     break;
 
                 default:

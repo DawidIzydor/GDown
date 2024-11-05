@@ -33,9 +33,7 @@ namespace GHent.App
             {
                 await semaphore.WaitAsync();
 
-#pragma warning disable S6602
                 var item = gHentContext.Items.FirstOrDefault(i=>i.Url == downloadPath);
-#pragma warning restore S6602
                 if (item is null)
                 {
                     gHentContext.AddItem(new DownloadableItem
@@ -213,7 +211,6 @@ namespace GHent.App
 
         public async Task EnqueueNotFinished()
         {
-            await gHentContext.LoadItems();
             var items = gHentContext.Items.Where(i => i.Status != DownloadStatus.Finished).ToList();
             if (items.Count > 0)
             {

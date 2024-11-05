@@ -6,11 +6,11 @@ using System.Windows;
 using Ghent.SimplyHentai;
 using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
-using System.Collections.Generic;
 using GHent.Shared.CbrCreator;
 using Microsoft.Extensions.DependencyInjection;
 using GHent.Data;
 using System.Linq;
+using System.Collections.Concurrent;
 
 namespace GHent.App
 {
@@ -20,15 +20,13 @@ namespace GHent.App
         IServiceProvider serviceProvider,
         DownloadManager gHentContext)
     {
-        private readonly Queue<(string downloadPath, string savePath, bool saveCbr)> _downloadQueue = new();
-        private Thread _backgroundThread = null;
+        private readonly ConcurrentQueue<(string downloadPath, string savePath, bool saveCbr)> _downloadQueue = new();
 
         public bool IsRunning { get; private set; }
-        private readonly object runLock = new();
 
         private readonly SemaphoreSlim semaphore = new(1);
 
-        private async Task UpdateStatus(string downloadPath, string savePath, bool saveCbr, DownloadStatus status)
+        private async Task UpdateStatusAsync(string downloadPath, string savePath, bool saveCbr, DownloadStatus status)
         {
 
             try
@@ -64,80 +62,53 @@ namespace GHent.App
             }
         }
 
-        public async Task Enqueue(string downloadPath, string savePath, bool saveCbr)
+        public async Task EnqueueAsync(string downloadPath, string savePath, bool saveCbr)
         {
-            lock (_downloadQueue)
-            {
-                _downloadQueue.Enqueue((downloadPath, savePath, saveCbr));
-            }
-
-            await UpdateStatus(downloadPath, savePath, saveCbr, DownloadStatus.Queued);
-
-            Run();
+            _downloadQueue.Enqueue((downloadPath, savePath, saveCbr));
+            await UpdateStatusAsync(downloadPath, savePath, saveCbr, DownloadStatus.Queued);
+            await RunAsync();
         }
 
-        private async Task DoWork()
+        private async Task RunAsync()
         {
-            lock (runLock) { 
-                IsRunning = true;
-            }
-            try
-            {
-                while (_downloadQueue.Count > 0)
-                {
-                    (var downloadUrl, var savePath, var saveCbr) = _downloadQueue.Dequeue();
+            if (IsRunning) return;
 
-                    progressReporter.Report(
-                        ProgressType.Information, 
-                        amount: 0, 
-                        message: $"Processing next item in queue. Left in queue: {_downloadQueue.Count}");
-
-                    var downloadUri = new Uri(downloadUrl);
-
-                    try
-                    {
-                        await DownloadElementAsync(savePath, downloadUri, saveCbr);
-
-                        await UpdateStatus(downloadUrl, savePath, saveCbr, DownloadStatus.Finished);
-                    }
-                    catch (Exception)
-                    {
-                        await UpdateStatus(downloadUrl, savePath, saveCbr, DownloadStatus.Error);
-                        throw;
-                    }
-                }
-            }
-            finally
-            {
-                lock (runLock)
-                {
-                    IsRunning = false;
-                }
-            }
+            IsRunning = true;
+            await Task.Run(ProcessQueueAsync);
         }
 
-        private void Run()
+        private async Task ProcessQueueAsync()
         {
-            if(_backgroundThread is null)
+            while (_downloadQueue.TryDequeue(out var item))
             {
-                _backgroundThread = new Thread(async () => await DoWork())
+                var (downloadPath, savePath, saveCbr) = item;
+                progressReporter.Report(ProgressType.Information, amount: 0, message: $"Processing next item in queue. Items left: {_downloadQueue.Count}");
+
+                try
                 {
-                    IsBackground = true
-                };
-                _backgroundThread.Start();
-            }
-            else
-            {
-                if(!IsRunning)
+                    var directoryPath = await DownloadElementAsync(savePath, new Uri(downloadPath));
+                    CreateCbr(cbrCreator, savePath, saveCbr, directoryPath);
+
+                    await UpdateStatusAsync(downloadPath, savePath, saveCbr, DownloadStatus.Finished);
+                }
+                catch (Exception)
                 {
-                    _backgroundThread = new Thread(async () => await DoWork());
-                    _backgroundThread.Start();
+                    await UpdateStatusAsync(downloadPath, savePath, saveCbr, DownloadStatus.Error);
                 }
             }
 
+            IsRunning = false;
         }
 
-        private async Task DownloadElementAsync(string savePath, Uri downloadUri, bool saveCbr)
+        private static void CreateCbr(ICbrCreator cbrCreator, string savePath, bool saveCbr, string directoryPath)
+        {
+            if (saveCbr)
+            {
+                cbrCreator.CreateCbr(savePath, directoryPath);
+            }
+        }
+
+        private async Task<string> DownloadElementAsync(string savePath, Uri downloadUri)
         {
             VerifyDirectoryExists(savePath);
 
@@ -149,10 +120,8 @@ namespace GHent.App
                 amount: 0, 
                 message: $"Finished {directoryPath}");
 
-            if (saveCbr)
-            {
-                cbrCreator.CreateCbr(savePath, directoryPath);
-            }
+
+            return directoryPath;
         }
 
         /// <exception cref="T:System.IO.IOException">
@@ -250,7 +219,7 @@ namespace GHent.App
             {
                 foreach (var item in items)
                 {
-                    await Enqueue(item.Url, item.SavePath, item.SaveCbr);
+                    await EnqueueAsync(item.Url, item.SavePath, item.SaveCbr);
                 }
             }
             else

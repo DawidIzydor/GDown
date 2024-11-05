@@ -61,7 +61,7 @@ namespace GHent.App
 
                 Log($"Adding to queue: URL: {downloadUrl}, Save Path: {savePath}, Save CBR: {saveCbr}");
 
-                await _downloadWorker.Enqueue(downloadUrl, savePath, saveCbr);
+                await _downloadWorker.EnqueueAsync(downloadUrl, savePath, saveCbr);
             }
             catch (OperationCanceledException)
             {

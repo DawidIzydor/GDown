@@ -41,7 +41,6 @@ namespace GHent.App
             }
             services.AddSingleton((_)=>new DownloadManager(dbPath));
 
-            services.AddSingleton<StartWindow>();
             services.AddSingleton<AlbumDownloadWindow>();
 
             services.AddSingleton<IImageSaver, HttpClientImageSaver>();
@@ -54,12 +53,12 @@ namespace GHent.App
             services.AddSingleton<CancellationTokenSource>();
 
             services.AddSingleton<SimplyHentaiAlbumRequestProcessor>();
-            services.AddSingleton<SimplyHentaiItemProcessor>();
+            services.AddSingleton<SimplyHentaiItemProcessor>();  
         }
 
         private void OnStartup(object sender, StartupEventArgs e)
         {
-            var mainWindow = _serviceProvider.GetService<StartWindow>();
+            var mainWindow = _serviceProvider.GetService<AlbumDownloadWindow>();
             mainWindow.Show();
         }
     }

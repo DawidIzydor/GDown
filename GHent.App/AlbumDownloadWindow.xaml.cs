@@ -48,12 +48,12 @@ namespace GHent.App
         ///     An aggregate exception containing all the exceptions thrown by the
         ///     registered callbacks on the associated <see cref="T:System.Threading.CancellationToken" />.
         /// </exception>
-        private async void DownloadButton_Click(object sender, RoutedEventArgs e)
+        private async void EnqueueButton_Click(object sender, RoutedEventArgs e)
         {
             string downloadUrl = null;
             try
             {
-                ResetDownloadUiElements();
+                CancelButton.SetCurrentValue(VisibilityProperty, Visibility.Visible);
 
                 var savePath = SavePath.Text;
                 downloadUrl = SourceTextBox.Text;
@@ -83,18 +83,8 @@ namespace GHent.App
             }
             finally
             {
-                DownloadButton.SetCurrentValue(VisibilityProperty, Visibility.Visible);
-                CancelButton.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
                 Log($"Enqueued {downloadUrl}");
             }
-        }
-
-
-
-        private void ResetDownloadUiElements()
-        {
-            DownloadButton.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
-            CancelButton.SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }
 
         private void ProgressHandler(object args)

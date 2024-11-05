@@ -5,21 +5,12 @@ namespace GHent.Data
 {
     public class DownloadManager(string filePath)
     {
-        public List<DownloadableItem> Items { get; private set; }
+        public List<DownloadableItem> Items { get; } = [];
         private readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             WriteIndented = true,
             Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
         };
-        public async ValueTask<DownloadableItem?> GetItemOrDefault(string url)
-        {
-            if(Items is null)
-            {
-                await LoadItems();
-            }
-
-            return Items.FirstOrDefault(i => i.Url == url);
-        }
 
         // Add a new item to the list
         public void AddItem(DownloadableItem item)
@@ -27,20 +18,10 @@ namespace GHent.Data
             Items.Add(item);
         }
 
-        // Remove an item from the list
-        public void RemoveItem(string url)
-        {
-            var item = Items.FirstOrDefault(i => i.Url == url);
-            if (item is not null)
-            {
-                Items.Remove(item);
-            }
-        }
-
         // Load items from the JSON file
         public async Task LoadItems()
         {
-            Items = new List<DownloadableItem>();
+            Items.Clear();
             if (File.Exists(filePath))
             {
                 string json = await File.ReadAllTextAsync(filePath);

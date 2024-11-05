@@ -35,7 +35,9 @@ namespace GHent.App
             {
                 await semaphore.WaitAsync();
 
-                var item = await gHentContext.GetItemOrDefault(downloadPath);
+#pragma warning disable S6602
+                var item = gHentContext.Items.FirstOrDefault(i=>i.Url == downloadPath);
+#pragma warning restore S6602
                 if (item is null)
                 {
                     gHentContext.AddItem(new DownloadableItem
@@ -190,10 +192,13 @@ namespace GHent.App
             else
             {
                 throw new NotImplementedException("Need to reimplement GHent");
+#pragma warning disable S125
+                // TODO: this needs to be reimplemented
                 //var requestProcessor = new GHentaiAlbumRequestProcessor(new ActionableProgressReporter<string>((IProgressReporter<string> progress, string lastDone) => Application.Current.Dispatcher.Invoke(ProgressHandler, progress, lastDone)), htmlWeb);
 
                 //return await requestProcessor.Download(albumRequest, cancellationToken)
                 //    .ConfigureAwait(false);
+#pragma warning restore S125
             }
         }
 

@@ -9,13 +9,16 @@ using GHent.Shared.Request;
 using System.Collections.Generic;
 using GHent.Shared.CbrCreator;
 using Microsoft.Extensions.DependencyInjection;
+using GHent.Data;
+using System.Linq;
 
 namespace GHent.App
 {
     public class DownloadWorker(IEventableProgressReporter progressReporter, 
         ICbrCreator cbrCreator,
         CancellationTokenSource cancellationTokenSource,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        DownloadManager gHentContext)
     {
         private readonly Queue<(string downloadPath, string savePath, bool saveCbr)> _downloadQueue = new();
         private Thread _backgroundThread = null;
@@ -23,12 +26,52 @@ namespace GHent.App
         public bool IsRunning { get; private set; }
         private readonly object runLock = new();
 
-        public void Enqueue(string downloadPath, string savePath, bool saveCbr)
+        private readonly SemaphoreSlim semaphore = new(1);
+
+        private async Task UpdateStatus(string downloadPath, string savePath, bool saveCbr, DownloadStatus status)
+        {
+
+            try
+            {
+                await semaphore.WaitAsync();
+
+                var item = await gHentContext.GetItemOrDefault(downloadPath);
+                if (item is null)
+                {
+                    gHentContext.AddItem(new DownloadableItem
+                    {
+                        SaveCbr = saveCbr,
+                        Url = downloadPath,
+                        SavePath = savePath,
+                        Status = status
+                    });
+                }
+                else
+                {
+                    item.SaveCbr = saveCbr;
+                    item.Url = downloadPath;
+                    item.SavePath = savePath;
+                    item.Status = status;
+
+                }
+                await gHentContext.SaveChanges();
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }
+
+        public async Task Enqueue(string downloadPath, string savePath, bool saveCbr)
         {
             lock (_downloadQueue)
             {
                 _downloadQueue.Enqueue((downloadPath, savePath, saveCbr));
             }
+
+            await UpdateStatus(downloadPath, savePath, saveCbr, DownloadStatus.Queued);
+
+            Run();
         }
 
         private async Task DoWork()
@@ -49,7 +92,17 @@ namespace GHent.App
 
                     var downloadUri = new Uri(downloadUrl);
 
-                    await DownloadElementAsync(savePath, downloadUri, saveCbr);
+                    try
+                    {
+                        await DownloadElementAsync(savePath, downloadUri, saveCbr);
+
+                        await UpdateStatus(downloadUrl, savePath, saveCbr, DownloadStatus.Finished);
+                    }
+                    catch (Exception)
+                    {
+                        await UpdateStatus(downloadUrl, savePath, saveCbr, DownloadStatus.Error);
+                        throw;
+                    }
                 }
             }
             finally
@@ -61,7 +114,7 @@ namespace GHent.App
             }
         }
 
-        public void Run()
+        private void Run()
         {
             if(_backgroundThread is null)
             {
@@ -184,5 +237,21 @@ namespace GHent.App
             }
         }
 
+        public async Task EnqueueNotFinished()
+        {
+            await gHentContext.LoadItems();
+            var items = gHentContext.Items.Where(i => i.Status != DownloadStatus.Finished).ToList();
+            if (items.Count > 0)
+            {
+                foreach (var item in items)
+                {
+                    await Enqueue(item.Url, item.SavePath, item.SaveCbr);
+                }
+            }
+            else
+            {
+                progressReporter.Report(ProgressType.Information, message: "No unfinished items to enqueue.", amount: 0);
+            }
+        }
     }
 }

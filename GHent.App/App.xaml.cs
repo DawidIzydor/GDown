@@ -1,8 +1,12 @@
 ﻿using Ghent.SimplyHentai;
+using GHent.Data;
 using GHent.Shared.CbrCreator;
 using GHent.Shared.ProgressReporter;
 using HtmlAgilityPack;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.IO;
 using System.Threading;
 using System.Windows;
 
@@ -24,6 +28,19 @@ namespace GHent.App
 
         private static void ConfigureServices(ServiceCollection services)
         {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("AppConfig.json", optional: false, reloadOnChange: true)
+                .Build();
+            services.AddSingleton<IConfiguration>(configuration);
+
+            var dbPath = configuration["DbPath"];
+            if (string.IsNullOrEmpty(dbPath))
+            {
+                throw new InvalidOperationException("DbPath is not defined in the AppConfig.json file.");
+            }
+            services.AddSingleton((_)=>new DownloadManager(dbPath));
+
             services.AddSingleton<StartWindow>();
             services.AddSingleton<AlbumDownloadWindow>();
 

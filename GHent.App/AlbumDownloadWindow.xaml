@@ -6,6 +6,7 @@
         mc:Ignorable="d"
         Title="Download album" Height="414" Width="800" Padding="1,1,1,1">
     <StackPanel Margin="1,1,1,1">
+        <Button x:Name="EnqueueNotFinished" Content="Enqueue Not Finished" Click="EnqueueNotFinished_Click" />
         <Label Content="Source" Margin="0, 1, 0, 1" />
         <TextBox x:Name="SourceTextBox" Text="" TextWrapping="Wrap" Width="auto" Margin="0, 1, 0, 1" />
         <Label Content="Save path" />

@@ -6,6 +6,9 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
     <PackageReference Include="WpfAnalyzers" Version="4.1.1">
@@ -15,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GHent.Data\GHent.Data.csproj" />
     <ProjectReference Include="..\GHent.Models\GHent.Shared.csproj" />
     <ProjectReference Include="..\GHent.Request\GHent.GHentai.csproj" />
     <ProjectReference Include="..\SimplyHentai\Ghent.SimplyHentai.csproj" />
@@ -29,6 +33,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="AppConfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="AppSettings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>AppSettings.Designer.cs</LastGenOutput>

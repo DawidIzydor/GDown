@@ -61,8 +61,7 @@ namespace GHent.App
 
                 Log($"Adding to queue: URL: {downloadUrl}, Save Path: {savePath}, Save CBR: {saveCbr}");
 
-                _downloadWorker.Enqueue(downloadUrl, savePath, saveCbr);
-                _downloadWorker.Run();
+                await _downloadWorker.Enqueue(downloadUrl, savePath, saveCbr);
             }
             catch (OperationCanceledException)
             {
@@ -144,5 +143,13 @@ namespace GHent.App
         private void CancelButton_Click(object sender, RoutedEventArgs e) => _cancellationTokenSource.Cancel();
 
         public void Dispose() => _cancellationTokenSource?.Dispose();
+
+        private async void EnqueueNotFinished_Click(object sender, RoutedEventArgs e)
+        {
+            EnqueueNotFinished.SetCurrentValue(IsEnabledProperty, false);
+            await _downloadWorker.EnqueueNotFinished();
+        }
+
+
     }
 }

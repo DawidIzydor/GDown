@@ -20,6 +20,13 @@ namespace GHent.Data
         };
         private readonly string filePath;
 
+        public DownloadableItem? GetByUrlOrDefault(string url)
+        {
+#pragma warning disable S6602
+            return _items.FirstOrDefault(i => i.Url == url);
+#pragma warning restore S6602
+        }
+
         // Add a new item to the list
         public void AddItem(DownloadableItem item)
         {
@@ -43,7 +50,7 @@ namespace GHent.Data
         }
 
         // Save items to the JSON file
-        public async Task SaveChanges()
+        public async Task SaveChangesAsync()
         {
             string json = JsonSerializer.Serialize(Items, _jsonSerializerOptions);
             await File.WriteAllTextAsync(filePath, json);

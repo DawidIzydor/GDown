@@ -3,15 +3,17 @@ using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
 using HtmlAgilityPack;
 using Polly;
-
+using GHent.Data;
 
 namespace Ghent.SimplyHentai
 {
-    public class SimplyHentaiAlbumRequestProcessor(IEventableProgressReporter progress, HtmlWeb htmlWeb, SimplyHentaiItemProcessor simplyHentaiItemProcessor) : IRequestProcessor
+    public class SimplyHentaiAlbumRequestProcessor(IEventableProgressReporter progress, HtmlWeb htmlWeb, SimplyHentaiItemProcessor simplyHentaiItemProcessor, DownloadManager downloadManager) : IRequestProcessor
     {
         private const string ThumbnailNodesXPath = "//div[@class='thumbs']/div[@class='thumb-container']";
         private const string AlbumTitleXPath = "//h1[@class='title']/span[@class='pretty']";
         private const string AnchorNodeXPath = ".//a";
+        private const string TagsContainerId = "tags";
+        private const string TagContainersXPath = "//span[@class=\"name\"]";
         private readonly Uri SimplyHentaiUrl = new("https://nhentai.net");
 
         private readonly IAsyncPolicy pollyPolicy = 
@@ -29,6 +31,29 @@ namespace Ghent.SimplyHentai
             {
                 throw new InvalidDataException("Thumb container nodes empty");
             }
+
+            HtmlNode htmlNode = document.GetElementbyId(TagsContainerId);
+            var tagsContainers = htmlNode.SelectNodes(TagContainersXPath);
+            if (tagsContainers != null)
+            {
+                var tags = (from tag in tagsContainers
+                            select tag.InnerText).ToList();
+
+                var downloadableItem = downloadManager.GetByUrlOrDefault(request.DownloadPath.ToString());
+                if (downloadableItem != null)
+                {
+                    if (downloadableItem.Tags is null)
+                    {
+                        downloadableItem.Tags = new HashSet<string>(tags);
+                    }
+                    else
+                    {
+                        downloadableItem.Tags.UnionWith(tags);
+                    }
+                    await downloadManager.SaveChangesAsync();
+                }
+            }
+
 
             var files = Directory.GetFiles(savePath);
             var skipFiles = new HashSet<int>();

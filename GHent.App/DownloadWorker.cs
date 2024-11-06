@@ -26,7 +26,7 @@ namespace GHent.App
 
         private readonly SemaphoreSlim semaphore = new(1);
 
-        private async Task UpdateStatusAsync(string downloadPath, string savePath, bool saveCbr, DownloadStatus status)
+        private async Task UpdateStatusAsync(string downloadPath, string savePath, bool saveCbr, DownloadStatus status, string title = default)
         {
 
             try
@@ -41,7 +41,8 @@ namespace GHent.App
                         SaveCbr = saveCbr,
                         Url = downloadPath,
                         SavePath = savePath,
-                        Status = status
+                        Status = status,
+                        Title = title
                     });
                 }
                 else
@@ -51,8 +52,12 @@ namespace GHent.App
                     item.SavePath = savePath;
                     item.Status = status;
 
+                    if(title != default)
+                    {
+                        item.Title = title;
+                    }
                 }
-                await gHentContext.SaveChanges();
+                await gHentContext.SaveChangesAsync();
             }
             finally
             {
@@ -87,7 +92,7 @@ namespace GHent.App
                     var directoryPath = await DownloadElementAsync(savePath, new Uri(downloadPath));
                     CreateCbr(cbrCreator, savePath, saveCbr, directoryPath);
 
-                    await UpdateStatusAsync(downloadPath, savePath, saveCbr, DownloadStatus.Finished);
+                    await UpdateStatusAsync(downloadPath, savePath, saveCbr, DownloadStatus.Finished, title: directoryPath);
                 }
                 catch (Exception)
                 {

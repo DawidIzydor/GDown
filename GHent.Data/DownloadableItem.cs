@@ -8,5 +8,8 @@
         public required string SavePath { get; set; }
         public required bool SaveCbr { get; set; }
 
+        public string? Title { get; set; }
+
+        public HashSet<string>? Tags { get; set; }
     }
 }

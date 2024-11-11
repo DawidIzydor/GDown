@@ -216,7 +216,11 @@ namespace GHent.App
 
         public async Task EnqueueNotFinished()
         {
-            var items = gHentContext.Items.Where(i => i.Status != DownloadStatus.Finished).ToList();
+            var items = gHentContext.Items.Where(i => 
+            i.Status != DownloadStatus.Finished
+            || i.Tags is null
+            || i.Tags?.Count == 0)
+                .ToList();
             if (items.Count > 0)
             {
                 foreach (var item in items)

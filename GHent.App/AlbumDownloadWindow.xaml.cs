@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using GHent.GHentai;
 using GHent.Shared.ProgressReporter;
@@ -49,6 +50,11 @@ namespace GHent.App
         ///     registered callbacks on the associated <see cref="T:System.Threading.CancellationToken" />.
         /// </exception>
         private async void EnqueueButton_Click(object sender, RoutedEventArgs e)
+        {
+            await EnqueueAsync();
+        }
+
+        private async Task EnqueueAsync()
         {
             string downloadUrl = null;
             try
@@ -140,6 +146,12 @@ namespace GHent.App
             await _downloadWorker.EnqueueNotFinished();
         }
 
-
+        private async void SourceTextBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if(e.Key == System.Windows.Input.Key.Enter)
+            {
+                await EnqueueAsync();
+            }    
+        }
     }
 }

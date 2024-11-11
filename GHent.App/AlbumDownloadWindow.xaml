@@ -8,7 +8,7 @@
     <StackPanel Margin="1,1,1,1">
         <Button x:Name="EnqueueNotFinished" Content="Enqueue Not Finished" Click="EnqueueNotFinished_Click" />
         <Label Content="Source" Margin="0, 1, 0, 1" />
-        <TextBox x:Name="SourceTextBox" Text="" TextWrapping="Wrap" Width="auto" Margin="0, 1, 0, 1" />
+        <TextBox x:Name="SourceTextBox" Text="" TextWrapping="Wrap" Width="auto" Margin="0, 1, 0, 1" KeyUp="SourceTextBox_KeyUp" />
         <Label Content="Save path" />
         <Grid Margin="0, 1, 0, 1">
             <Grid.ColumnDefinitions>

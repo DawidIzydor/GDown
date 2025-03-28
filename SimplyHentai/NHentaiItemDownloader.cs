@@ -4,7 +4,7 @@ using HtmlAgilityPack;
 
 namespace Ghent.SimplyHentai
 {
-    public class NHentaiItemProcessor(HtmlWeb htmlWeb, IImageSaver imageSaver, IEventableProgressReporter progressReporter) : IRequestProcessor
+    public class NHentaiItemDownloader(HtmlWeb htmlWeb, IImageSaver imageSaver, IEventableProgressReporter progressReporter) : IRequestDownloader
     {
         private const string ImageXPath = "//section[@id='image-container']//a//img";
 

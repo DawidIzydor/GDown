@@ -54,8 +54,8 @@ namespace GHent.App
             services.AddSingleton<ICbrCreator, ZipFileCbrCreator>();
             services.AddSingleton<CancellationTokenSource>();
 
-            services.AddSingleton<NHentaiAlbumRequestProcessor>();
-            services.AddSingleton<NHentaiItemProcessor>();  
+            services.AddSingleton<NHentaiAlbumDownloader>();
+            services.AddSingleton<NHentaiItemDownloader>();  
         }
 
         private void OnStartup(object sender, StartupEventArgs e)

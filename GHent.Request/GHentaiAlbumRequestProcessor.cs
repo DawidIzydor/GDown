@@ -16,7 +16,7 @@ namespace GHent.GHentai
     {
         public string DownloadUrl { get; set; }
     }
-    public class GHentaiAlbumRequestProcessor(IEventableProgressReporter progress, HtmlWeb htmlWeb) : IRequestProcessor
+    public class GHentaiAlbumRequestProcessor(IEventableProgressReporter progress, HtmlWeb htmlWeb) : IRequestDownloader
     {
         /// <exception cref="T:System.IO.DirectoryNotFoundException">The specified path is invalid (for example, it is on an unmapped drive).</exception>
         /// <exception cref="T:System.UnauthorizedAccessException">The caller does not have the required permission.</exception>

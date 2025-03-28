@@ -21,7 +21,7 @@ namespace GHent.Data
         }
 
         public IReadOnlyCollection<DownloadableItem> Items { get => _items.AsReadOnly(); }
-        private readonly List<DownloadableItem> _items = new();
+        private readonly List<DownloadableItem> _items = [];
         private readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             WriteIndented = true,

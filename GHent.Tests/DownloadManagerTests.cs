@@ -2,10 +2,11 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using GHent.Data;
 using Moq;
 using Xunit;
 
-namespace GHent.Data.Tests
+namespace GHent.Tests
 {
     public class DownloadManagerTests
     {
@@ -36,8 +37,8 @@ namespace GHent.Data.Tests
             // Arrange
             var items = new List<DownloadableItem>
             {
-                new DownloadableItem { Url = "http://example.com", Status = DownloadStatus.NotStarted, SavePath = "path1", SaveCbr = false },
-                new DownloadableItem { Url = "http://example2.com", Status = DownloadStatus.Queued, SavePath = "path2", SaveCbr = true }
+                new() { Url = "http://example.com", Status = DownloadStatus.NotStarted, SavePath = "path1", SaveCbr = false },
+                new() { Url = "http://example2.com", Status = DownloadStatus.Queued, SavePath = "path2", SaveCbr = true }
             };
             var json = JsonSerializer.Serialize(items);
             _fileServiceMock.Setup(fs => fs.Exists(_filePath)).Returns(true);

@@ -51,10 +51,10 @@ namespace GHent.App
         /// </exception>
         private async void EnqueueButton_Click(object sender, RoutedEventArgs e)
         {
-            await EnqueueAsync();
+            await EnqueueAsync(_cancellationTokenSource.Token);
         }
 
-        private async Task EnqueueAsync()
+        private async Task EnqueueAsync(CancellationToken cancellationToken)
         {
             string downloadUrl = null;
             try
@@ -67,7 +67,7 @@ namespace GHent.App
 
                 Log($"Adding to queue: URL: {downloadUrl}, Save Path: {savePath}, Save CBR: {saveCbr}");
 
-                await _downloadWorker.EnqueueAsync(downloadUrl, savePath, saveCbr);
+                await _downloadWorker.EnqueueAsync(downloadUrl, savePath, saveCbr, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -143,14 +143,14 @@ namespace GHent.App
         private async void EnqueueNotFinished_Click(object sender, RoutedEventArgs e)
         {
             EnqueueNotFinished.SetCurrentValue(IsEnabledProperty, false);
-            await _downloadWorker.EnqueueNotFinished();
+            await _downloadWorker.EnqueueNotFinished(_cancellationTokenSource.Token);
         }
 
         private async void SourceTextBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if(e.Key == System.Windows.Input.Key.Enter)
             {
-                await EnqueueAsync();
+                await EnqueueAsync(_cancellationTokenSource.Token);
             }    
         }
     }

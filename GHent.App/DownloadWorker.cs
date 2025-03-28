@@ -14,11 +14,11 @@ using System.Collections.Concurrent;
 
 namespace GHent.App
 {
-    public class DownloadWorker(IEventableProgressReporter progressReporter, 
+    public sealed class DownloadWorker(IEventableProgressReporter progressReporter, 
         ICbrCreator cbrCreator,
         CancellationTokenSource cancellationTokenSource,
         IServiceProvider serviceProvider,
-        DownloadManager gHentContext)
+        DownloadManager gHentContext) : IDisposable
     {
         private readonly ConcurrentQueue<(string downloadPath, string savePath, bool saveCbr)> _downloadQueue = new();
 
@@ -65,25 +65,26 @@ namespace GHent.App
             }
         }
 
-        public async Task EnqueueAsync(string downloadPath, string savePath, bool saveCbr)
+        public async Task EnqueueAsync(string downloadPath, string savePath, bool saveCbr, CancellationToken cancellationToken)
         {
             _downloadQueue.Enqueue((downloadPath, savePath, saveCbr));
             await UpdateStatusAsync(downloadPath, savePath, saveCbr, DownloadStatus.Queued);
-            await RunAsync();
+            await RunAsync(cancellationToken);
         }
 
-        private async Task RunAsync()
+        private Task RunAsync(CancellationToken cancellationToken)
         {
-            if (IsRunning) return;
+            if (IsRunning) return Task.CompletedTask;
 
             IsRunning = true;
-            await Task.Run(ProcessQueueAsync);
+            return ProcessQueueAsync(cancellationToken);
         }
 
-        private async Task ProcessQueueAsync()
+        private async Task ProcessQueueAsync(CancellationToken cancellationToken)
         {
             while (_downloadQueue.TryDequeue(out var item))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var (downloadPath, savePath, saveCbr) = item;
                 progressReporter.Report(ProgressType.Information, amount: 0, message: $"Processing next item in queue. Items left: {_downloadQueue.Count}");
 
@@ -94,7 +95,7 @@ namespace GHent.App
 
                     await UpdateStatusAsync(downloadPath, savePath, saveCbr, DownloadStatus.Finished, title: directoryPath);
                 }
-                catch (Exception)
+                catch
                 {
                     await UpdateStatusAsync(downloadPath, savePath, saveCbr, DownloadStatus.Error);
                 }
@@ -146,6 +147,7 @@ namespace GHent.App
         private async Task<string> DownloadAsync(string savePath, Uri downloadUri,
             CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             SaveLastUsedPaths(downloadUri, savePath);
 
             var albumRequest = new Request
@@ -214,7 +216,7 @@ namespace GHent.App
             }
         }
 
-        public async Task EnqueueNotFinished()
+        public async Task EnqueueNotFinished(CancellationToken cancellationToken)
         {
             var items = gHentContext.Items.Where(i => 
             i.Status != DownloadStatus.Finished
@@ -225,13 +227,19 @@ namespace GHent.App
             {
                 foreach (var item in items)
                 {
-                    await EnqueueAsync(item.Url, item.SavePath, item.SaveCbr);
+                    await EnqueueAsync(item.Url, item.SavePath, item.SaveCbr, cancellationToken);
                 }
             }
             else
             {
                 progressReporter.Report(ProgressType.Information, message: "No unfinished items to enqueue.", amount: 0);
             }
+        }
+
+        public void Dispose()
+        {
+            semaphore?.Dispose();
+            cancellationTokenSource?.Dispose();
         }
     }
 }

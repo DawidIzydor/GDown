@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Items List with Tag Filter</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .item {
+      border: 1px solid #333;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #1e1e1e;
+    }
+    .item h3 {
+      margin: 0 0 5px;
+    }
+    a {
+      color: #BB86FC;
+    }
+    #filterInput {
+      margin-bottom: 20px;
+      padding: 5px;
+      width: 300px;
+      background-color: #1e1e1e;
+      border: 1px solid #333;
+      color: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <h2>Items List</h2>
+  <input type="text" id="filterInput" placeholder="Filter by tag(s) separated by commas...">
+  <div id="itemsContainer"></div>
+
+  <script>
+    let items = []; // This will hold the items from ghent.json
+
+    // Function to display items in the container
+    function displayItems(filteredItems) {
+      const container = document.getElementById('itemsContainer');
+      container.innerHTML = '';
+      filteredItems.forEach(item => {
+        // Extract the last segment from the title (segments separated by "\")
+        const titleSegments = item.Title.split('\\');
+        const lastSegment = titleSegments[titleSegments.length - 1];
+        // Create a link to the subpage based on the last segment (e.g., http://localhost/title)
+        const titleLink = `<a href="${lastSegment}">${lastSegment}</a>`;
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'item';
+        itemDiv.innerHTML = `
+          <h3>${titleLink}</h3>
+          <p><strong>Status:</strong> ${item.Status}</p>
+          <p><strong>URL:</strong> <a href="${item.Url}" target="_blank">${item.Url}</a></p>
+          <p><strong>SavePath:</strong> ${item.SavePath}</p>
+          <p><strong>SaveCbr:</strong> ${item.SaveCbr}</p>
+          <p><strong>Tags:</strong> ${item.Tags.join(', ')}</p>
+        `;
+        container.appendChild(itemDiv);
+      });
+    }
+
+    // Fetch JSON data from ghent.json
+    fetch('ghent.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        items = data;
+        displayItems(items);
+      })
+      .catch(error => {
+        console.error('Error fetching JSON:', error);
+      });
+
+	  // Listen to input changes for filtering by tags
+	  document.getElementById('filterInput').addEventListener('input', function(e) {
+		const filterValue = e.target.value.trim().toLowerCase();
+		if (!filterValue) {
+		  displayItems(items);
+		  return;
+		}
+		// Split the input by commas, trim whitespace, and remove empty strings
+		const filterTags = filterValue.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
+		// Filter items: each filter tag must be a substring of at least one of the item's tags
+		const filtered = items.filter(item =>
+		  filterTags.every(filterTag =>
+			item.Tags.some(tag => tag.toLowerCase().includes(filterTag))
+		  )
+		);
+		displayItems(filtered);
+	  });
+  </script>
+</body>
+</html>

@@ -44,7 +44,7 @@ namespace Ghent.SimplyHentai
                 {
                     if (downloadableItem.Tags is null)
                     {
-                        downloadableItem.Tags = new HashSet<string>(tags);
+                        downloadableItem.Tags = [.. tags];
                     }
                     else
                     {

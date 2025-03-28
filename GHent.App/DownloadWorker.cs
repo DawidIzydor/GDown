@@ -18,7 +18,7 @@ namespace GHent.App
         ICbrCreator cbrCreator,
         CancellationTokenSource cancellationTokenSource,
         IServiceProvider serviceProvider,
-        DownloadManager gHentContext) : IDisposable
+        IDownloadableItemsProvider downloadableItemsProvider) : IDisposable
     {
         private readonly ConcurrentQueue<(string downloadPath, string savePath, bool saveCbr)> _downloadQueue = new();
 
@@ -28,15 +28,14 @@ namespace GHent.App
 
         private async Task UpdateStatusAsync(string downloadPath, string savePath, bool saveCbr, DownloadStatus status, string title = default)
         {
-
             try
             {
                 await semaphore.WaitAsync();
 
-                var item = gHentContext.Items.FirstOrDefault(i=>i.Url == downloadPath);
+                var item = downloadableItemsProvider.Items.FirstOrDefault(i=>i.Url == downloadPath);
                 if (item is null)
                 {
-                    gHentContext.AddItem(new DownloadableItem
+                    downloadableItemsProvider.AddItem(new DownloadableItem
                     {
                         SaveCbr = saveCbr,
                         Url = downloadPath,
@@ -57,7 +56,7 @@ namespace GHent.App
                         item.Title = title;
                     }
                 }
-                await gHentContext.SaveChangesAsync();
+                await downloadableItemsProvider.SaveChangesAsync();
             }
             finally
             {
@@ -218,7 +217,7 @@ namespace GHent.App
 
         public async Task EnqueueNotFinished(CancellationToken cancellationToken)
         {
-            var items = gHentContext.Items.Where(i => 
+            var items = downloadableItemsProvider.Items.Where(i => 
             i.Status != DownloadStatus.Finished
             || i.Tags is null
             || i.Tags?.Count == 0)

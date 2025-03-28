@@ -39,7 +39,9 @@ namespace GHent.App
             {
                 throw new InvalidOperationException("DbPath is not defined in the AppConfig.json file.");
             }
-            services.AddSingleton((_)=>new DownloadManager(dbPath));
+
+            // TODO get rid of .Result
+            services.AddSingleton((_) => DownloadManager.CreateAsync(dbPath).Result);
 
             services.AddSingleton<AlbumDownloadWindow>();
 

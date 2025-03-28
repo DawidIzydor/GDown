@@ -5,7 +5,7 @@ using HtmlAgilityPack;
 using Polly;
 using GHent.Data;
 
-namespace Ghent.SimplyHentai
+namespace Ghent.NHentai
 {
     public class NHentaiAlbumDownloader(IEventableProgressReporter progress, HtmlWeb htmlWeb, NHentaiItemDownloader nHentaiItemProcessor, DownloadManager downloadManager) : IRequestDownloader
     {

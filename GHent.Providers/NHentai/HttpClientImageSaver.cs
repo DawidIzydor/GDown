@@ -1,6 +1,6 @@
 ﻿using GHent.Shared.ProgressReporter;
 
-namespace Ghent.SimplyHentai
+namespace Ghent.NHentai
 {
     public class HttpClientImageSaver(IEventableProgressReporter progressReporter) : IImageSaver
     {

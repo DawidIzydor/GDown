@@ -1,5 +1,4 @@
-﻿
-namespace Ghent.SimplyHentai
+﻿namespace Ghent.NHentai
 {
     public interface IImageSaver
     {

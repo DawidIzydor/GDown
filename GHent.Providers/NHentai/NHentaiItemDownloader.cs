@@ -2,7 +2,7 @@
 using GHent.Shared.Request;
 using HtmlAgilityPack;
 
-namespace Ghent.SimplyHentai
+namespace Ghent.NHentai
 {
     public class NHentaiItemDownloader(HtmlWeb htmlWeb, IImageSaver imageSaver, IEventableProgressReporter progressReporter) : IRequestDownloader
     {

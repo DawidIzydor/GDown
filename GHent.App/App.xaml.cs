@@ -1,4 +1,4 @@
-﻿using Ghent.SimplyHentai;
+﻿using Ghent.NHentai;
 using GHent.Data;
 using GHent.Shared.CbrCreator;
 using GHent.Shared.ProgressReporter;

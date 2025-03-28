@@ -1,12 +1,12 @@
-﻿using GHent.Shared;
-using GHent.Shared.Request;
+﻿using GHent.Shared.Request;
 using HtmlAgilityPack;
+using System;
+using System.IO;
 
-namespace Ghent.SimplyHentai
+namespace GHent.Shared
 {
-    internal static class HtmlDocumentHelper
+    public static class HtmlDocumentHelper
     {
-
         public static string ExtractSavePath(this HtmlDocument document, IRequest request, string albumTitleXPath)
         {
             var albumTitle = document.GetAlbumTitle(albumTitleXPath);

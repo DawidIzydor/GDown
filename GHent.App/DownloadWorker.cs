@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Ghent.SimplyHentai;
 using GHent.Shared.ProgressReporter;
 using GHent.Shared.Request;
 using GHent.Shared.CbrCreator;
@@ -11,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using GHent.Data;
 using System.Linq;
 using System.Collections.Concurrent;
+using Ghent.NHentai;
 
 namespace GHent.App
 {

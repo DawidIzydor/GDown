@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GHent.Data\GHent.Data.csproj" />
-    <ProjectReference Include="..\GHent.Models\GHent.Shared.csproj" />
+    <ProjectReference Include="..\..\GHent.Data\GHent.Data.csproj" />
+    <ProjectReference Include="..\..\GHent.Models\GHent.Shared.csproj" />
   </ItemGroup>
 
 </Project>

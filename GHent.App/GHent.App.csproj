@@ -20,8 +20,8 @@
   <ItemGroup>
     <ProjectReference Include="..\GHent.Data\GHent.Data.csproj" />
     <ProjectReference Include="..\GHent.Models\GHent.Shared.csproj" />
-    <ProjectReference Include="..\GHent.Request\GHent.GHentai.csproj" />
-    <ProjectReference Include="..\SimplyHentai\Ghent.SimplyHentai.csproj" />
+    <ProjectReference Include="..\GHent.Providers\GHentai\GHent.GHentai.csproj" />
+    <ProjectReference Include="..\GHent.Providers\NHentai\Ghent.NHentai.csproj" />
   </ItemGroup>
 
   <ItemGroup>

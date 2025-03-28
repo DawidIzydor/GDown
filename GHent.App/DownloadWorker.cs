@@ -158,7 +158,7 @@ namespace GHent.App
             if (downloadUri.Host == "simplyhentai.org" || downloadUri.Host == "nhentai.net")
             {
 
-                var requestProcessor = serviceProvider.GetRequiredService<SimplyHentaiAlbumRequestProcessor>();
+                var requestProcessor = serviceProvider.GetRequiredService<NHentaiAlbumRequestProcessor>();
 
                 return await requestProcessor.Download(albumRequest, cancellationToken).ConfigureAwait(false);
             }

@@ -51,11 +51,11 @@ namespace GHent.App
             services.AddSingleton<IEventableProgressReporter, EventableProgressReporter>();
             services.AddSingleton<DownloadWorker>();
 
-            services.AddSingleton<ICbrCreator, CbrCreator>();
+            services.AddSingleton<ICbrCreator, ZipFileCbrCreator>();
             services.AddSingleton<CancellationTokenSource>();
 
-            services.AddSingleton<SimplyHentaiAlbumRequestProcessor>();
-            services.AddSingleton<SimplyHentaiItemProcessor>();  
+            services.AddSingleton<NHentaiAlbumRequestProcessor>();
+            services.AddSingleton<NHentaiItemProcessor>();  
         }
 
         private void OnStartup(object sender, StartupEventArgs e)

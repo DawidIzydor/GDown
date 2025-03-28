@@ -4,7 +4,7 @@ using System.IO.Compression;
 
 namespace GHent.Shared.CbrCreator
 {
-    public class CbrCreator(IEventableProgressReporter progressReporter) : ICbrCreator
+    public class ZipFileCbrCreator(IEventableProgressReporter progressReporter) : ICbrCreator
     {
         public void CreateCbr(string saveToPath, string createFromPath)
         {

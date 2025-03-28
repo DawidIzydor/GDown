@@ -7,7 +7,7 @@ using GHent.Data;
 
 namespace Ghent.SimplyHentai
 {
-    public class SimplyHentaiAlbumRequestProcessor(IEventableProgressReporter progress, HtmlWeb htmlWeb, SimplyHentaiItemProcessor simplyHentaiItemProcessor, DownloadManager downloadManager) : IRequestProcessor
+    public class NHentaiAlbumRequestProcessor(IEventableProgressReporter progress, HtmlWeb htmlWeb, NHentaiItemProcessor nHentaiItemProcessor, DownloadManager downloadManager) : IRequestProcessor
     {
         private const string ThumbnailNodesXPath = "//div[@class='thumbs']/div[@class='thumb-container']";
         private const string AlbumTitleXPath = "//h1[@class='title']/span[@class='pretty']";
@@ -107,7 +107,7 @@ namespace Ghent.SimplyHentai
 
                     await pollyPolicy.ExecuteAsync(async () =>
                     {
-                        await simplyHentaiItemProcessor.Download(itemRequest, cancellationToken);
+                        await nHentaiItemProcessor.Download(itemRequest, cancellationToken);
                     });
                 }
                 else

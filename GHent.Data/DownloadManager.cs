@@ -6,20 +6,22 @@ namespace GHent.Data
 
     public class DownloadManager : IDownloadableItemsProvider
     {
-        private DownloadManager(string filePath)
+        private readonly IFileService _fileService;
+        private DownloadManager(string filePath, IFileService fileService)
         {
             _filePath = filePath;
+            _fileService = fileService;
         }
 
-        public static async Task<DownloadManager> CreateAsync(string filePath)
+        public static async Task<DownloadManager> CreateAsync(string filePath, IFileService fileService)
         {
-            var manager = new DownloadManager(filePath);
+            var manager = new DownloadManager(filePath, fileService);
             await manager.LoadItemsAsync();
             return manager;
         }
 
         public IReadOnlyCollection<DownloadableItem> Items { get => _items.AsReadOnly(); }
-        private readonly List<DownloadableItem> _items = [];
+        private readonly List<DownloadableItem> _items = new();
         private readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             WriteIndented = true,
@@ -27,22 +29,19 @@ namespace GHent.Data
         };
         private readonly string _filePath;
 
-        // Add a new item to the list
         public void AddItem(DownloadableItem item)
         {
             _items.Add(item);
         }
 
-        // Load items from the JSON file asynchronously
         private async Task LoadItemsAsync()
         {
-            if (!File.Exists(_filePath))
+            if (!_fileService.Exists(_filePath))
             {
-                // there's nothing to load
                 return;
             }
 
-            string json = await File.ReadAllTextAsync(_filePath);
+            string json = await _fileService.ReadAllTextAsync(_filePath);
 
             var items = JsonSerializer.Deserialize<List<DownloadableItem>>(json, _jsonSerializerOptions);
 
@@ -52,11 +51,10 @@ namespace GHent.Data
             }
         }
 
-        // Save items to the JSON file
         public async Task SaveChangesAsync()
         {
             string json = JsonSerializer.Serialize(Items, _jsonSerializerOptions);
-            await File.WriteAllTextAsync(_filePath, json);
+            await _fileService.WriteAllTextAsync(_filePath, json);
         }
     }
 }

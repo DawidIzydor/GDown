@@ -7,7 +7,7 @@ using GHent.Data;
 
 namespace Ghent.NHentai
 {
-    public class NHentaiAlbumDownloader(IEventableProgressReporter progress, HtmlWeb htmlWeb, NHentaiItemDownloader nHentaiItemProcessor, DownloadManager downloadManager) : IRequestDownloader
+    public class NHentaiAlbumDownloader(IEventableProgressReporter progress, HtmlWeb htmlWeb, NHentaiItemDownloader nHentaiItemProcessor, IDownloadableItemsProvider downloadManager) : IRequestDownloader
     {
         private const string ThumbnailNodesXPath = "//div[@class='thumbs']/div[@class='thumb-container']";
         private const string AlbumTitleXPath = "//h1[@class='title']/span[@class='pretty']";

@@ -41,7 +41,9 @@ namespace GHent.App
                         Url = downloadPath,
                         SavePath = savePath,
                         Status = status,
-                        Title = title
+                        Title = title,
+                        Created = DateTime.Now,
+                        LastUpdated = DateTime.Now
                     });
                 }
                 else
@@ -50,8 +52,9 @@ namespace GHent.App
                     item.Url = downloadPath;
                     item.SavePath = savePath;
                     item.Status = status;
+                    item.LastUpdated = DateTime.Now;
 
-                    if(title != default)
+                    if (title != default)
                     {
                         item.Title = title;
                     }

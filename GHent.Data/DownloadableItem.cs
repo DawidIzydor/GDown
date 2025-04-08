@@ -11,5 +11,8 @@
         public string? Title { get; set; }
 
         public HashSet<string>? Tags { get; set; }
+
+        public DateTime Created { get; set; }
+        public DateTime LastUpdated { get; set; }
     }
 }
